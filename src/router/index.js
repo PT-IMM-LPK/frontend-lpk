@@ -19,6 +19,26 @@ const router = createRouter({
             name: 'log-permintaan',
             component: () => import('../components/user/log_permintaan.vue')
         },
+        {
+            path: '/data-monitor',
+            name: 'data-monitor',
+            component: () => import('../components/admin/data-monitor.vue')
+        },
+        {
+            path: '/kelola-pertanyaan',
+            name: 'kelola-pertanyaan',
+            component: () => import('../components/admin/kelola-pertanyaan.vue')
+        },
+        {
+            path: '/departemen',
+            name: 'departemen',
+            component: () => import('../components/admin/departemen.vue')
+        },
+        {
+            path: '/pengguna',
+            name: 'pengguna',
+            component: () => import('../components/admin/pengguna.vue')
+        },
     ],
     scrollBehavior(to, from, savedPosition) {
         return { top: 0 }

@@ -56,7 +56,7 @@ export default {
             class="p-4 md:p-6 bg-white rounded-2xl shadow-sm border border-zinc-200 max-w-3xl text-left">
             <h3
               class="font-left text-xl sm:text-xl font-bold mb-3 text-black leading-tight">
-              Tujuan Perjalanan
+              Lokasi
             </h3>
             <div class="h-0.5 w-full bg-[#7800b5] rounded-lg mb-4"></div>
             <input

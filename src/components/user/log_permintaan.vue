@@ -16,14 +16,14 @@ export default {
     
     const tiketDiterima = ref([
       {
-        id: "TK001",
+        id: "GA - TR - 1",
         keperluan: "Perjalanan Bisnis",
         nama: "John Doe",
         waktuPeminjaman: "12/12/2026, 12:00:00",
         waktuSelesai: "13/12/2026, 12:00:00",
       },
       {
-        id: "TK002",
+        id: "GA - TR - 2",
         keperluan: "Kunjungan Client",
         nama: "Jane Smith",
         waktuPeminjaman: "15/12/2026, 09:00:00",
@@ -33,7 +33,7 @@ export default {
 
     const tiketDitolak = ref([
       {
-        id: "TK003",
+        id: "GA - TR - 3",
         keperluan: "Perjalanan Pribadi",
         nama: "Bob Wilson",
         waktuPeminjaman: "14/12/2026, 10:00:00",
