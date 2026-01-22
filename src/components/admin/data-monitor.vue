@@ -8,10 +8,10 @@ import {
   ArrowUpTrayIcon,
   TrashIcon,
   CheckIcon,
-  PencilSquareIcon,
   CheckCircleIcon,
   XCircleIcon,
-  ClockIcon,
+  XMarkIcon,
+  ChevronDownIcon,
 } from "@heroicons/vue/24/outline";
 
 const isMobileMenuOpen = ref(false);
@@ -19,6 +19,50 @@ const searchQuery = ref("");
 const currentPage = ref(1);
 const selectedRowIds = ref([]);
 const itemsPerPage = 10;
+const showFilter = ref(false);
+const filterDate = ref({
+  startDate: "",
+  endDate: "",
+});
+const filterPersetujuan = ref({
+  Head: false,
+  Transportasi: false,
+  GA: false,
+  GS: false,
+});
+const filterDepartemen = ref("");
+const filterLokasi = ref("");
+const filterKeperluan = ref("");
+const filterLayanan = ref("");
+
+// State untuk Approval Modals
+const showPersetujuanTerima = ref(false);
+const showPersetujuanTolak = ref(false);
+const approvalContext = ref({
+  type: null, // 'head', 'trans', 'ga', 'gs'
+  action: null, // 'approve', 'reject'
+  row: null,
+});
+
+// State untuk Detail Modal
+const showDetail = ref(false);
+const currentDetailRow = ref(null);
+
+const approvalTypeLabel = computed(() => {
+  const labels = {
+    head: "Head Departemen",
+    trans: "Transportasi",
+    ga: "GA",
+    gs: "GS",
+  };
+  return labels[approvalContext.value.type] || "";
+});
+
+const approvalActionLabel = computed(() => {
+  return approvalContext.value.action === "approve"
+    ? "Persetujuan"
+    : "Penolakan";
+});
 
 // Mock data untuk testing
 const tableData = ref([
@@ -34,40 +78,92 @@ const tableData = ref([
     layanan: "Izin Khusus Kendaraan operasional",
     waktuPeminjaman: "2024-01-21 10:30:45",
     waktuSelesai: "2024-01-21 12:30:45",
-    headApproval: false,
-    transApproval: false,
-    gaApproval: true,
-    gsApproval: false,
-  },
-  {
-    id: 2,
-    nomorTiket: "GA-TR-02",
-    nik: "09876543210987654321",
-    nama: "Jane Smith",
-    email: "jane.smith@company.com",
-    departemen: "HR",
-    lokasi: "NonBinaan",
-    keperluan: "Pribadi",
-    layanan: "Layanan Pool",
-    waktuPeminjaman: "2024-01-21 11:00:00",
-    waktuSelesai: "2024-01-21 13:00:00",
-    headApproval: true,
-    transApproval: true,
-    gaApproval: false,
-    gsApproval: true,
+    headApproval: null,
+    headApprovalTime: "",
+    transApproval: null,
+    transApprovalTime: "",
+    gaApproval: null,
+    gaApprovalTime: "",
+    gsApproval: null,
+    gsApprovalTime: "",
   },
 ]);
 
-// Filtered data based on search
+// Filtered data based on search and filters
 const filteredTableData = computed(() => {
-  if (!searchQuery.value) {
-    return tableData.value;
+  let filtered = tableData.value;
+
+  // Apply search filter
+  if (searchQuery.value) {
+    filtered = filtered.filter(
+      (item) =>
+        item.nama.toLowerCase().includes(searchQuery.value.toLowerCase()) ||
+        item.nomorTiket.toLowerCase().includes(searchQuery.value.toLowerCase()),
+    );
   }
-  return tableData.value.filter(
-    (item) =>
-      item.nama.toLowerCase().includes(searchQuery.value.toLowerCase()) ||
-      item.nomorTiket.toLowerCase().includes(searchQuery.value.toLowerCase()),
-  );
+
+  // Apply date range filter
+  if (filterDate.value.startDate || filterDate.value.endDate) {
+    filtered = filtered.filter((item) => {
+      const itemDate = new Date(item.waktuPeminjaman.split(" ")[0]);
+      if (filterDate.value.startDate) {
+        const startDate = new Date(filterDate.value.startDate);
+        if (itemDate < startDate) return false;
+      }
+      if (filterDate.value.endDate) {
+        const endDate = new Date(filterDate.value.endDate);
+        if (itemDate > endDate) return false;
+      }
+      return true;
+    });
+  }
+
+  // Apply persetujuan filter
+  const hasPersetujuanFilter =
+    filterPersetujuan.value.Head ||
+    filterPersetujuan.value.Transportasi ||
+    filterPersetujuan.value.GA ||
+    filterPersetujuan.value.GS;
+
+  if (hasPersetujuanFilter) {
+    filtered = filtered.filter((item) => {
+      const matchHead =
+        !filterPersetujuan.value.Head || item.headApproval === true;
+      const matchTrans =
+        !filterPersetujuan.value.Transportasi ||
+        item.transApproval === true;
+      const matchGA = !filterPersetujuan.value.GA || item.gaApproval === true;
+      const matchGS = !filterPersetujuan.value.GS || item.gsApproval === true;
+
+      return matchHead && matchTrans && matchGA && matchGS;
+    });
+  }
+
+  // Apply departemen filter
+  if (filterDepartemen.value) {
+    filtered = filtered.filter(
+      (item) => item.departemen === filterDepartemen.value,
+    );
+  }
+
+  // Apply lokasi filter
+  if (filterLokasi.value) {
+    filtered = filtered.filter((item) => item.lokasi === filterLokasi.value);
+  }
+
+  // Apply keperluan filter
+  if (filterKeperluan.value) {
+    filtered = filtered.filter(
+      (item) => item.keperluan === filterKeperluan.value,
+    );
+  }
+
+  // Apply layanan filter
+  if (filterLayanan.value) {
+    filtered = filtered.filter((item) => item.layanan === filterLayanan.value);
+  }
+
+  return filtered;
 });
 
 // Paginated data
@@ -131,21 +227,67 @@ const toggleSelectAll = () => {
   }
 };
 
-const getResultColor = (hasil) => {
-  return hasil === "Lolos"
-    ? { bg: "#DCFCE7", text: "#166534" }
-    : { bg: "#FEE2E2", text: "#991B1B" };
+const handleApprovalClick = (row, type, action) => {
+  approvalContext.value = {
+    type: type,
+    action: action,
+    row: row,
+  };
+  
+  if (action === "approve") {
+    showPersetujuanTerima.value = true;
+  } else {
+    showPersetujuanTolak.value = true;
+  }
 };
+
+const confirmApproval = () => {
+  const row = approvalContext.value.row;
+  const type = approvalContext.value.type;
+  const action = approvalContext.value.action;
+  const now = new Date();
+  const timestamp = now.toISOString().slice(0, 16); // Format: YYYY-MM-DDTHH:mm
+  
+  if (type === "head") {
+    row.headApproval = action === "approve" ? true : false;
+    row.headApprovalTime = timestamp;
+  } else if (type === "trans") {
+    row.transApproval = action === "approve" ? true : false;
+    row.transApprovalTime = timestamp;
+  } else if (type === "ga") {
+    row.gaApproval = action === "approve" ? true : false;
+    row.gaApprovalTime = timestamp;
+  } else if (type === "gs") {
+    row.gsApproval = action === "approve" ? true : false;
+    row.gsApprovalTime = timestamp;
+  }
+  
+  closeApprovalModals();
+};
+
+const closeApprovalModals = () => {
+  showPersetujuanTerima.value = false;
+  showPersetujuanTolak.value = false;
+  approvalContext.value = {
+    type: null,
+    action: null,
+    row: null,
+  };
+};
+
+const openDetail = (row) => {
+  currentDetailRow.value = { ...row };
+  showDetail.value = true;
+};
+
+const closeDetail = () => {
+  showDetail.value = false;
+  currentDetailRow.value = null;
+};
+
 
 const handleEdit = (id) => {
   console.log("Edit item:", id);
-};
-
-const handleApprove = (id) => {
-  const item = tableData.value.find((row) => row.id === id);
-  if (item) {
-    item.persetujuan = !item.persetujuan;
-  }
 };
 
 const previousPage = () => {
@@ -167,8 +309,49 @@ const toggleMobileMenu = () => {
 
 // Function untuk membuka filter
 const openFilter = () => {
-  console.log("Filter opened");
+  showFilter.value = true;
 };
+
+const closeFilter = () => {
+  showFilter.value = false;
+};
+
+const applyFilter = () => {
+  // Reset to first page when filter is applied
+  currentPage.value = 1;
+  showFilter.value = false;
+};
+
+const resetFilter = () => {
+  filterDate.value.startDate = "";
+  filterDate.value.endDate = "";
+  filterPersetujuan.value.Head = false;
+  filterPersetujuan.value.Transportasi = false;
+  filterPersetujuan.value.GA = false;
+  filterPersetujuan.value.GS = false;
+  filterDepartemen.value = "";
+  filterLokasi.value = "";
+  filterKeperluan.value = "";
+  filterLayanan.value = "";
+  currentPage.value = 1;
+};
+
+// Get unique values from table data for dropdown options
+const uniqueDepartemen = computed(() => {
+  return [...new Set(tableData.value.map((item) => item.departemen))];
+});
+
+const uniqueLokasi = computed(() => {
+  return [...new Set(tableData.value.map((item) => item.lokasi))];
+});
+
+const uniqueKeperluan = computed(() => {
+  return [...new Set(tableData.value.map((item) => item.keperluan))];
+});
+
+const uniqueLayanan = computed(() => {
+  return [...new Set(tableData.value.map((item) => item.layanan))];
+});
 
 // Provide untuk digunakan di header
 provide("toggleMobileMenu", toggleMobileMenu);
@@ -342,14 +525,14 @@ provide("toggleMobileMenu", toggleMobileMenu);
                         rowspan="2"
                         class="px-4 py-3 text-center text-sm font-semibold text-gray-700 whitespace-nowrap min-w-16"
                       >
-                        Edit
+                        Detail
                       </th>
                     </tr>
                     <tr class="border-b-2 border-gray-400 bg-gray-50">
                       <th
                         class="px-4 py-3 text-center text-sm font-semibold text-gray-700 whitespace-nowrap min-w-20 border-r border-gray-300"
                       >
-                        Head
+                        Head Dept
                       </th>
                       <th
                         class="px-4 py-3 text-center text-sm font-semibold text-gray-700 whitespace-nowrap min-w-24 border-r border-gray-300"
@@ -475,10 +658,10 @@ provide("toggleMobileMenu", toggleMobileMenu);
                       >
                         <div class="flex items-center justify-center gap-2">
                           <button
-                            @click="row.headApproval = true"
+                            @click="handleApprovalClick(row, 'head', 'approve')"
                             :class="[
                               'p-1.5 rounded-lg transition border-2',
-                              row.headApproval
+                              row.headApproval === true
                                 ? 'text-green-500 bg-green-100 border-green-500'
                                 : 'text-gray-400 hover:text-green-500 border-gray-300 hover:border-green-400',
                             ]"
@@ -487,10 +670,10 @@ provide("toggleMobileMenu", toggleMobileMenu);
                             <CheckCircleIcon class="w-6 h-6" />
                           </button>
                           <button
-                            @click="row.headApproval = false"
+                            @click="handleApprovalClick(row, 'head', 'reject')"
                             :class="[
                               'p-1.5 rounded-lg transition border-2',
-                              !row.headApproval
+                              row.headApproval === false
                                 ? 'text-red-500 bg-red-100 border-red-500'
                                 : 'text-gray-400 hover:text-red-500 border-gray-300 hover:border-red-400',
                             ]"
@@ -505,10 +688,10 @@ provide("toggleMobileMenu", toggleMobileMenu);
                       >
                         <div class="flex items-center justify-center gap-2">
                           <button
-                            @click="row.transApproval = true"
+                            @click="handleApprovalClick(row, 'trans', 'approve')"
                             :class="[
                               'p-1.5 rounded-lg transition border-2',
-                              row.transApproval
+                              row.transApproval === true
                                 ? 'text-green-500 bg-green-100 border-green-500'
                                 : 'text-gray-400 hover:text-green-500 border-gray-300 hover:border-green-400',
                             ]"
@@ -517,10 +700,10 @@ provide("toggleMobileMenu", toggleMobileMenu);
                             <CheckCircleIcon class="w-6 h-6" />
                           </button>
                           <button
-                            @click="row.transApproval = false"
+                            @click="handleApprovalClick(row, 'trans', 'reject')"
                             :class="[
                               'p-1.5 rounded-lg transition border-2',
-                              !row.transApproval
+                              row.transApproval === false
                                 ? 'text-red-500 bg-red-100 border-red-500'
                                 : 'text-gray-400 hover:text-red-500 border-gray-300 hover:border-red-400',
                             ]"
@@ -535,10 +718,10 @@ provide("toggleMobileMenu", toggleMobileMenu);
                       >
                         <div class="flex items-center justify-center gap-2">
                           <button
-                            @click="row.gaApproval = true"
+                            @click="handleApprovalClick(row, 'ga', 'approve')"
                             :class="[
                               'p-1.5 rounded-lg transition border-2',
-                              row.gaApproval
+                              row.gaApproval === true
                                 ? 'text-green-500 bg-green-100 border-green-500'
                                 : 'text-gray-400 hover:text-green-500 border-gray-300 hover:border-green-400',
                             ]"
@@ -547,10 +730,10 @@ provide("toggleMobileMenu", toggleMobileMenu);
                             <CheckCircleIcon class="w-6 h-6" />
                           </button>
                           <button
-                            @click="row.gaApproval = false"
+                            @click="handleApprovalClick(row, 'ga', 'reject')"
                             :class="[
                               'p-1.5 rounded-lg transition border-2',
-                              !row.gaApproval
+                              row.gaApproval === false
                                 ? 'text-red-500 bg-red-100 border-red-500'
                                 : 'text-gray-400 hover:text-red-500 border-gray-300 hover:border-red-400',
                             ]"
@@ -565,10 +748,10 @@ provide("toggleMobileMenu", toggleMobileMenu);
                       >
                         <div class="flex items-center justify-center gap-2">
                           <button
-                            @click="row.gsApproval = true"
+                            @click="handleApprovalClick(row, 'gs', 'approve')"
                             :class="[
                               'p-1.5 rounded-lg transition border-2',
-                              row.gsApproval
+                              row.gsApproval === true
                                 ? 'text-green-500 bg-green-100 border-green-500'
                                 : 'text-gray-400 hover:text-green-500 border-gray-300 hover:border-green-400',
                             ]"
@@ -577,10 +760,10 @@ provide("toggleMobileMenu", toggleMobileMenu);
                             <CheckCircleIcon class="w-6 h-6" />
                           </button>
                           <button
-                            @click="row.gsApproval = false"
+                            @click="handleApprovalClick(row, 'gs', 'reject')"
                             :class="[
                               'p-1.5 rounded-lg transition border-2',
-                              !row.gsApproval
+                              row.gsApproval === false
                                 ? 'text-red-500 bg-red-100 border-red-500'
                                 : 'text-gray-400 hover:text-red-500 border-gray-300 hover:border-red-400',
                             ]"
@@ -591,20 +774,517 @@ provide("toggleMobileMenu", toggleMobileMenu);
                         </div>
                       </td>
                       <td
-                        class="px-4 py-3 whitespace-nowrap min-w-16 text-center"
+                        class="px-4 py-3 text-gray-800 text-xs font-medium whitespace-nowrap min-w-20 text-center border-r border-gray-300"
                       >
                         <button
-                          @click="handleEdit(row.id)"
-                          class="p-2 text-gray-600 rounded-md hover:bg-blue-200 transition"
-                          title="Edit"
+                          type="button"
+                          @click="openDetail(row)"
+                          class="px-3 py-1 rounded-md text-xs font-semibold  bg-gray-200 text-gray-700  hover:bg-gray-300  active:bg-gray-400 transition"
                         >
-                          <PencilSquareIcon class="w-5 h-5" />
+                          Detail
                         </button>
                       </td>
                     </tr>
                   </tbody>
                 </table>
               </div>
+
+              <!-- Konten Filter -->
+               <div
+                v-if="showFilter"
+                class="fixed inset-0 bg-black/70 flex items-center justify-center z-50 p-4"
+              >
+                <div
+                  class="bg-white rounded-lg w-full max-w-md md:max-w-lg max-h-[90vh] overflow-y-auto shadow-[0_4px_6px_rgba(0,0,0,0.1)] p-6 md:p-8"
+                >
+                  <div
+                    class="flex justify-between items-center mb-1 pb-3 border-b border-gray-200"
+                  >
+                    <h2 class="text-lg md:text-xl font-semibold text-gray-900">
+                      Filter Data
+                    </h2>
+                    <button
+                      @click="closeFilter"
+                      class="shrink-0 p-1 hover:bg-gray-100 rounded-md transition"
+                    >
+                      <XMarkIcon
+                        class="w-6 h-6 text-gray-600 hover:text-gray-900"
+                      />
+                    </button>
+                  </div>
+
+                  <!-- Filter Date -->
+                  <div class="grid grid-cols-2 gap-4">
+                    <div>
+                      <label
+                        class="block text-sm font-medium text-gray-800 mb-2 mt-2"
+                        >Waktu Peminjaman</label
+                      >
+                      <input
+                        v-model="filterDate.startDate"
+                        type="date"
+                        class="w-full p-2 text-xs border border-[#C3C3C3] bg-white text-gray-700 rounded-md focus:outline-none focus:border-[#A90CF8]"
+                      />
+                    </div>
+                    <div>
+                      <label
+                        class="block text-sm font-medium text-gray-800 mb-2 mt-2"
+                        >Waktu Selesai</label
+                      >
+                      <input
+                        v-model="filterDate.endDate"
+                        type="date"
+                        class="w-full p-2 text-xs border border-[#C3C3C3] bg-white text-gray-700 rounded-md focus:outline-none focus:border-[#A90CF8]"
+                      />
+                    </div>
+                  </div>
+
+                  <!-- Filter Persetujuan -->
+                  <div>
+                    <label class="block text-sm font-medium text-black mb-2 mt-4"
+                      >Persetujuan</label
+                    >
+                    <div class="flex flex-wrap gap-4">
+                      <div class="flex items-center">
+                        <input
+                          v-model="filterPersetujuan.Head"
+                          type="checkbox"
+                          id="head"
+                          class="w-4 h-4 cursor-pointer rounded border-2 border-gray-300"
+                          style="
+                            appearance: none;
+                            -webkit-appearance: none;
+                            -moz-appearance: none;
+                          "
+                          :style="
+                            filterPersetujuan.Head
+                              ? {
+                                  backgroundColor: '#3B82F6',
+                                  borderColor: '#1E40AF',
+                                }
+                              : { backgroundColor: 'white', borderColor: '#d1d5db' }
+                          "
+                        />
+                        <label
+                          for="head"
+                          class="ml-2 text-sm text-black cursor-pointer"
+                          >Head</label
+                        >
+                      </div>
+                      <div class="flex items-center">
+                        <input
+                          v-model="filterPersetujuan.Transportasi"
+                          type="checkbox"
+                          id="transportasi"
+                          class="w-4 h-4 cursor-pointer rounded border-2 border-gray-300"
+                          style="
+                            appearance: none;
+                            -webkit-appearance: none;
+                            -moz-appearance: none;
+                          "
+                          :style="
+                            filterPersetujuan.Transportasi
+                              ? {
+                                  backgroundColor: '#8B5CF6',
+                                  borderColor: '#5B21B6',
+                                }
+                              : { backgroundColor: 'white', borderColor: '#d1d5db' }
+                          "
+                        />
+                        <label
+                          for="transportasi"
+                          class="ml-2 text-sm text-black cursor-pointer"
+                          >Transportasi</label
+                        >
+                      </div>
+                      <div class="flex items-center">
+                        <input
+                          v-model="filterPersetujuan.GA"
+                          type="checkbox"
+                          id="ga"
+                          class="w-4 h-4 cursor-pointer rounded border-2 border-gray-300"
+                          style="
+                            appearance: none;
+                            -webkit-appearance: none;
+                            -moz-appearance: none;
+                          "
+                          :style="
+                            filterPersetujuan.GA
+                              ? {
+                                  backgroundColor: '#EC4899',
+                                  borderColor: '#9D174D',
+                                }
+                              : { backgroundColor: 'white', borderColor: '#d1d5db' }
+                          "
+                        />
+                        <label
+                          for="ga"
+                          class="ml-2 text-sm text-black cursor-pointer"
+                          >GA</label
+                        >
+                      </div>
+                      <div class="flex items-center">
+                        <input
+                          v-model="filterPersetujuan.GS"
+                          type="checkbox"
+                          id="gs"
+                          class="w-4 h-4 cursor-pointer rounded border-2 border-gray-300"
+                          style="
+                            appearance: none;
+                            -webkit-appearance: none;
+                            -moz-appearance: none;
+                          "
+                          :style="
+                            filterPersetujuan.GS
+                              ? {
+                                  backgroundColor: '#F59E0B',
+                                  borderColor: '#B45309',
+                                }
+                              : { backgroundColor: 'white', borderColor: '#d1d5db' }
+                          "
+                        />
+                        <label
+                          for="gs"
+                          class="ml-2 text-sm text-black cursor-pointer"
+                          >GS</label
+                        >
+                      </div>
+                    </div>
+                  </div>
+
+                  <!-- Departemen -->
+                  <div>
+                    <label class="block text-sm font-medium text-gray-800 mb-2 mt-2"
+                      >Departemen</label
+                    >
+                    <div class="relative">
+                      <select
+                        v-model="filterDepartemen"
+                        class="w-full p-2 pr-10 text-sm border border-[#C3C3C3] bg-white text-gray-700 rounded-md focus:outline-none focus:border-[#A90CF8] appearance-none"
+                      >
+                        <option value="">Pilih Departemen</option>
+                        <option
+                          v-for="dept in uniqueDepartemen"
+                          :key="dept"
+                          :value="dept"
+                        >
+                          {{ dept }}
+                        </option>
+                      </select>
+                      <ChevronDownIcon
+                        class="absolute right-3 top-2.5 w-5 h-5 text-[#949494] pointer-events-none"
+                      />
+                    </div>
+                  </div>
+
+                  <!-- Lokasi -->
+                  <div>
+                    <label class="block text-sm font-medium text-gray-800 mb-2 mt-2"
+                      >Lokasi</label
+                    >
+                    <div class="relative">
+                      <select
+                        v-model="filterLokasi"
+                        class="w-full p-2 pr-10 text-sm border border-[#C3C3C3] bg-white text-gray-700 rounded-md focus:outline-none focus:border-[#A90CF8] appearance-none"
+                      >
+                        <option value="">Pilih Lokasi</option>
+                        <option
+                          v-for="lokasi in uniqueLokasi"
+                          :key="lokasi"
+                          :value="lokasi"
+                        >
+                          {{ lokasi }}
+                        </option>
+                      </select>
+                      <ChevronDownIcon
+                        class="absolute right-3 top-2.5 w-5 h-5 text-[#949494] pointer-events-none"
+                      />
+                    </div>
+                  </div>
+
+                  <!-- Keperluan -->
+                  <div>
+                    <label class="block text-sm font-medium text-gray-800 mb-2 mt-2"
+                      >Keperluan</label
+                    >
+                    <div class="relative">
+                      <select
+                        v-model="filterKeperluan"
+                        class="w-full p-2 pr-10 text-sm border border-[#C3C3C3] bg-white text-gray-700 rounded-md focus:outline-none focus:border-[#A90CF8] appearance-none"
+                      >
+                        <option value="">Pilih Keperluan</option>
+                        <option
+                          v-for="keperluan in uniqueKeperluan"
+                          :key="keperluan"
+                          :value="keperluan"
+                        >
+                          {{ keperluan }}
+                        </option>
+                      </select>
+                      <ChevronDownIcon
+                        class="absolute right-3 top-2.5 w-5 h-5 text-[#949494] pointer-events-none"
+                      />
+                    </div>
+                  </div>
+
+                  <!-- Layanan -->
+                  <div>
+                    <label class="block text-sm font-medium text-gray-800 mb-2 mt-2"
+                      >Layanan</label
+                    >
+                    <div class="relative">
+                      <select
+                        v-model="filterLayanan"
+                        class="w-full p-2 pr-10 text-sm border border-[#C3C3C3] bg-white text-gray-700 rounded-md focus:outline-none focus:border-[#A90CF8] appearance-none"
+                      >
+                        <option value="">Pilih Layanan</option>
+                        <option
+                          v-for="layanan in uniqueLayanan"
+                          :key="layanan"
+                          :value="layanan"
+                        >
+                          {{ layanan }}
+                        </option>
+                      </select>
+                      <ChevronDownIcon
+                        class="absolute right-3 top-2.5 w-5 h-5 text-[#949494] pointer-events-none"
+                      />
+                    </div>
+                  </div>
+
+                  <div class="flex justify-center gap-3 mt-6">
+                    <button
+                      @click="() => { resetFilter(); closeFilter(); }"
+                      class="px-6 md:px-6 py-2 text-sm md:text-base border border-gray-300 text-gray-700 rounded-xl hover:bg-gray-50 transition font-regular"
+                    >
+                      Reset
+                    </button>
+                    <button
+                      @click="closeFilter"
+                      class="px-6 md:px-6 py-2 text-sm md:text-base border border-gray-300 text-gray-700 rounded-xl hover:bg-gray-50 transition font-regular"
+                    >
+                      Batal
+                    </button>
+                    <button
+                      @click="applyFilter"
+                      class="px-6 md:px-6 py-2 text-sm md:text-base bg-linear-to-r from-[#A90CF8] to-[#9600E1] text-white rounded-xl hover:opacity-90 transition font-regular"
+                    >
+                      Terapkan
+                    </button>
+                  </div>
+                </div>
+              </div>
+
+          <!-- Persetujuan Terima -->
+          <div
+            v-if="showPersetujuanTerima"
+            class="fixed inset-0 bg-black/70 flex items-center justify-center z-50 p-4"
+          >
+            <div
+              class="bg-white rounded-lg w-full max-w-md md:max-w-lg max-h-[90vh] overflow-y-auto shadow-[0_4px_6px_rgba(0,0,0,0.1)] p-6 md:p-8"
+            >
+              <div
+                class="flex justify-between items-center mb-4 pb-3 border-b border-gray-200"
+              >
+                <h2 class="text-lg md:text-xl font-semibold text-gray-900">
+                  Konfirmasi {{ approvalActionLabel }}
+                </h2>
+                <button
+                  @click="closeApprovalModals"
+                  class="shrink-0 p-1 hover:bg-gray-100 rounded-md transition"
+                >
+                  <XMarkIcon
+                    class="w-6 h-6 text-gray-600 hover:text-gray-900"
+                  />
+                </button>
+              </div>
+
+              <div class="mb-6">
+                <p class="text-gray-700 text-base">
+                  Apakah sebagai
+                  <span class="font-semibold text-blue-600">{{
+                    approvalTypeLabel
+                  }}</span>
+                  anda yakin untuk melakukan
+                  <span class="font-semibold text-green-600">{{
+                    approvalActionLabel
+                  }}</span>
+                  ?
+                </p>
+              </div>
+
+              <div class="flex justify-end gap-3">
+                <button
+                  @click="closeApprovalModals"
+                  class="px-6 py-2 text-sm md:text-base border border-gray-300 text-gray-700 rounded-xl hover:bg-gray-50 transition font-regular"
+                >
+                  Batal
+                </button>
+                <button
+                  @click="confirmApproval"
+                  class="px-6 py-2 text-sm md:text-base bg-linear-to-r from-green-500 to-green-600 text-white rounded-xl hover:opacity-90 transition font-regular"
+                >
+                  Ya, Setuju
+                </button>
+              </div>
+            </div>
+          </div>
+
+          <!-- Persetujuan Tolak -->
+          <div
+            v-if="showPersetujuanTolak"
+            class="fixed inset-0 bg-black/70 flex items-center justify-center z-50 p-4"
+          >
+            <div
+              class="bg-white rounded-lg w-full max-w-md md:max-w-lg max-h-[90vh] overflow-y-auto shadow-[0_4px_6px_rgba(0,0,0,0.1)] p-6 md:p-8"
+            >
+              <div
+                class="flex justify-between items-center mb-4 pb-3 border-b border-gray-200"
+              >
+                <h2 class="text-lg md:text-xl font-semibold text-gray-900">
+                  Konfirmasi {{ approvalActionLabel }}
+                </h2>
+                <button
+                  @click="closeApprovalModals"
+                  class="shrink-0 p-1 hover:bg-gray-100 rounded-md transition"
+                >
+                  <XMarkIcon
+                    class="w-6 h-6 text-gray-600 hover:text-gray-900"
+                  />
+                </button>
+              </div>
+
+              <div class="mb-6">
+                <p class="text-gray-700 text-base">
+                  Apakah sebagai
+                  <span class="font-semibold text-blue-600">{{
+                    approvalTypeLabel
+                  }}</span>
+                  anda yakin untuk melakukan
+                  <span class="font-semibold text-red-600">{{
+                    approvalActionLabel
+                  }}</span>
+                  ?
+                </p>
+              </div>
+
+              <div class="flex justify-end gap-3">
+                <button
+                  @click="closeApprovalModals"
+                  class="px-6 py-2 text-sm md:text-base border border-gray-300 text-gray-700 rounded-xl hover:bg-gray-50 transition font-regular"
+                >
+                  Batal
+                </button>
+                <button
+                  @click="confirmApproval"
+                  class="px-6 py-2 text-sm md:text-base bg-linear-to-r from-red-500 to-red-600 text-white rounded-xl hover:opacity-90 transition font-regular"
+                >
+                  Ya, Tolak
+                </button>
+              </div>
+            </div>
+          </div>
+
+          <!-- Detail -->
+          <div
+            v-if="showDetail && currentDetailRow"
+            class="fixed inset-0 bg-black/70 flex items-center justify-center z-50 p-4"
+          >
+            <div
+              class="bg-white rounded-lg w-full max-w-md md:max-w-lg max-h-[90vh] overflow-y-auto shadow-[0_4px_6px_rgba(0,0,0,0.1)] p-6 md:p-8"
+            >
+              <div
+                class="flex justify-between items-center mb-4 pb-3 border-b border-gray-200"
+              >
+                <h2 class="text-lg md:text-xl font-semibold text-gray-900">
+                  Detail Persetujuan
+                </h2>
+                <button
+                  @click="closeDetail"
+                  class="shrink-0 p-1 hover:bg-gray-100 rounded-md transition"
+                >
+                  <XMarkIcon
+                    class="w-6 h-6 text-gray-600 hover:text-gray-900"
+                  />
+                </button>
+              </div>
+
+              <div class="space-y-4">
+                <!-- Head Departemen -->
+                <div class="border border-gray-200 rounded-lg p-4">
+                  <div class="flex justify-between items-start mb-2">
+                    <label class="text-sm font-semibold text-gray-700">Head Dept</label>
+                    <span :class="['text-sm font-semibold', currentDetailRow.headApproval === null ? 'text-gray-400' : currentDetailRow.headApproval === true ? 'text-green-600' : 'text-red-600']">
+                      {{ currentDetailRow.headApproval === null ? "Belum Dipilih" : currentDetailRow.headApproval === true ? "Disetujui" : "Ditolak" }}
+                    </span>
+                  </div>
+                  <input
+                    v-model="currentDetailRow.headApprovalTime"
+                    type="datetime-local"
+                    :disabled="currentDetailRow.headApproval === null"
+                    class="w-full p-2 text-xs border border-gray-300 bg-white text-gray-700 rounded-md focus:outline-none disabled:bg-gray-100"
+                  />
+                </div>
+
+                <!-- Transportasi -->
+                <div class="border border-gray-200 rounded-lg p-4">
+                  <div class="flex justify-between items-start mb-2">
+                    <label class="text-sm font-semibold text-gray-700">Transportasi</label>
+                    <span :class="['text-sm font-semibold', currentDetailRow.transApproval === null ? 'text-gray-400' : currentDetailRow.transApproval === true ? 'text-green-600' : 'text-red-600']">
+                      {{ currentDetailRow.transApproval === null ? "Belum Dipilih" : currentDetailRow.transApproval === true ? "Disetujui" : "Ditolak" }}
+                    </span>
+                  </div>
+                  <input
+                    v-model="currentDetailRow.transApprovalTime"
+                    type="datetime-local"
+                    :disabled="currentDetailRow.transApproval === null"
+                    class="w-full p-2 text-xs border border-gray-300 bg-white text-gray-700 rounded-md focus:outline-none disabled:bg-gray-100"
+                  />
+                </div>
+
+                <!-- GA -->
+                <div class="border border-gray-200 rounded-lg p-4">
+                  <div class="flex justify-between items-start mb-2">
+                    <label class="text-sm font-semibold text-gray-700">GA</label>
+                    <span :class="['text-sm font-semibold', currentDetailRow.gaApproval === null ? 'text-gray-400' : currentDetailRow.gaApproval === true ? 'text-green-600' : 'text-red-600']">
+                      {{ currentDetailRow.gaApproval === null ? "Belum Dipilih" : currentDetailRow.gaApproval === true ? "Disetujui" : "Ditolak" }}
+                    </span>
+                  </div>
+                  <input
+                    v-model="currentDetailRow.gaApprovalTime"
+                    type="datetime-local"
+                    :disabled="currentDetailRow.gaApproval === null"
+                    class="w-full p-2 text-xs border border-gray-300 bg-white text-gray-700 rounded-md focus:outline-none disabled:bg-gray-100"
+                  />
+                </div>
+
+                <!-- GS -->
+                <div class="border border-gray-200 rounded-lg p-4">
+                  <div class="flex justify-between items-start mb-2">
+                    <label class="text-sm font-semibold text-gray-700">GS</label>
+                    <span :class="['text-sm font-semibold', currentDetailRow.gsApproval === null ? 'text-gray-400' : currentDetailRow.gsApproval === true ? 'text-green-600' : 'text-red-600']">
+                      {{ currentDetailRow.gsApproval === null ? "Belum Dipilih" : currentDetailRow.gsApproval === true ? "Disetujui" : "Ditolak" }}
+                    </span>
+                  </div>
+                  <input
+                    v-model="currentDetailRow.gsApprovalTime"
+                    type="datetime-local"
+                    :disabled="currentDetailRow.gsApproval === null"
+                    class="w-full p-2 text-xs border border-gray-300 bg-white text-gray-700 rounded-md focus:outline-none disabled:bg-gray-100"
+                  />
+                </div>
+              </div>
+
+              <div class="flex justify-end gap-3 mt-6">
+                <button
+                  @click="closeDetail"
+                  class="px-6 py-2 text-sm md:text-base border border-gray-300 text-gray-700 rounded-xl bg-red-100 hover:bg-red-200 transition font-regular"
+                >
+                  Tutup
+                </button>
+              </div>
+            </div>
+          </div>
 
               <!-- Pagination -->
               <div
