@@ -48,12 +48,12 @@ let idCounter = 6;
 // 1. Tambah Departemen
 const submitTambah = () => {
   if (!formData.nama.trim()) return alert("Nama departemen tidak boleh kosong");
-  
+
   tableData.value.push({
     id: idCounter++,
     namaDepartemen: formData.nama,
   });
-  
+
   alert("Departemen berhasil ditambahkan");
   closeTambahDepartemen();
 };
@@ -74,12 +74,13 @@ const submitEdit = () => {
 // 3. Hapus Departemen (Bulk Delete)
 const handleDeleteSelected = () => {
   if (selectedRowIds.value.length === 0) return;
-  if (!confirm(`Hapus ${selectedRowIds.value.length} departemen terpilih?`)) return;
+  if (!confirm(`Hapus ${selectedRowIds.value.length} departemen terpilih?`))
+    return;
 
   tableData.value = tableData.value.filter(
-    (item) => !selectedRowIds.value.includes(item.id)
+    (item) => !selectedRowIds.value.includes(item.id),
   );
-  
+
   alert("Data terpilih berhasil dihapus");
   selectedRowIds.value = [];
   selectAllChecked.value = false;
@@ -117,7 +118,8 @@ const selectRow = (rowId) => {
     selectedRowIds.value.push(rowId);
   }
   selectAllChecked.value =
-    selectedRowIds.value.length === tableData.value.length && tableData.value.length > 0;
+    selectedRowIds.value.length === tableData.value.length &&
+    tableData.value.length > 0;
 };
 
 const toggleSelectAll = () => {
@@ -164,7 +166,7 @@ const startIndex = computed(() => {
 const endIndex = computed(() => {
   return Math.min(
     currentPage.value * itemsPerPage,
-    filteredTableData.value.length
+    filteredTableData.value.length,
   );
 });
 
@@ -184,12 +186,12 @@ const sortByDepartmentName = () => {
   if (sortOrder.value === "asc") {
     sortOrder.value = "desc";
     tableData.value = [...tableData.value].sort((a, b) =>
-      b.namaDepartemen.localeCompare(a.namaDepartemen)
+      b.namaDepartemen.localeCompare(a.namaDepartemen),
     );
   } else {
     sortOrder.value = "asc";
     tableData.value = [...tableData.value].sort((a, b) =>
-      a.namaDepartemen.localeCompare(b.namaDepartemen)
+      a.namaDepartemen.localeCompare(b.namaDepartemen),
     );
   }
   currentPage.value = 1;
@@ -200,21 +202,26 @@ const toggleMobileMenu = () => {
   isMobileMenuOpen.value = !isMobileMenuOpen.value;
 };
 
-provide('toggleMobileMenu', toggleMobileMenu);
+provide("toggleMobileMenu", toggleMobileMenu);
 </script>
 
 <template>
-  <div class="min-h-screen flex flex-col font-['Montserrat']">
+  <div class="h-screen flex flex-col font-['Montserrat']">
     <div class="flex flex-1 overflow-hidden">
-      <Aside />
+      <!-- Aside Sidebar - Push content style -->
+      <Aside :isOpen="isSidebarOpen" :onClose="closeSidebar" />
 
-      <div class="flex flex-col flex-1 w-full lg:ml-0 overflow-hidden">
+      <!-- Main Content Area -->
+      <div class="flex flex-col flex-1 min-w-0 overflow-hidden">
         <HeaderAdmin />
 
-        <div class="bg-[#EFEFEF] flex-1 flex flex-col p-3 overflow-hidden">
-          <div class="bg-white rounded-lg shadow-md p-5 flex-1 flex flex-col overflow-y-auto">
+        <!-- Content -->
+        <main class="bg-[#EFEFEF] flex-1 flex flex-col p-3 overflow-hidden">
+          <div
+            class="bg-white rounded-lg shadow-md p-5 flex-1 flex flex-col overflow-y-auto"
+          >
             <!-- Content goes here -->
-             <div
+            <div
               class="flex items-center gap-3 pb-4 border-b shrink-0 flex-none justify-between"
             >
               <div class="flex items-center gap-3">
@@ -407,6 +414,7 @@ provide('toggleMobileMenu', toggleMobileMenu);
               </div>
             </div>
 
+            <!-- Konten Tambah Departemen -->
             <div
               v-if="showTambahDepartemen"
               class="fixed inset-0 bg-black/70 flex items-center justify-center z-50 p-4"
@@ -466,6 +474,7 @@ provide('toggleMobileMenu', toggleMobileMenu);
               </div>
             </div>
 
+            <!-- Konten Edit Departemen -->
             <div
               v-if="showEditDepartemen"
               class="fixed inset-0 bg-black/70 flex items-center justify-center z-50 p-4"
@@ -525,7 +534,7 @@ provide('toggleMobileMenu', toggleMobileMenu);
               </div>
             </div>
           </div>
-        </div>
+        </main>
       </div>
     </div>
   </div>

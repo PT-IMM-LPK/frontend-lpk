@@ -130,8 +130,7 @@ const filteredTableData = computed(() => {
       const matchHead =
         !filterPersetujuan.value.Head || item.headApproval === true;
       const matchTrans =
-        !filterPersetujuan.value.Transportasi ||
-        item.transApproval === true;
+        !filterPersetujuan.value.Transportasi || item.transApproval === true;
       const matchGA = !filterPersetujuan.value.GA || item.gaApproval === true;
       const matchGS = !filterPersetujuan.value.GS || item.gsApproval === true;
 
@@ -233,7 +232,7 @@ const handleApprovalClick = (row, type, action) => {
     action: action,
     row: row,
   };
-  
+
   if (action === "approve") {
     showPersetujuanTerima.value = true;
   } else {
@@ -247,7 +246,7 @@ const confirmApproval = () => {
   const action = approvalContext.value.action;
   const now = new Date();
   const timestamp = now.toISOString().slice(0, 16); // Format: YYYY-MM-DDTHH:mm
-  
+
   if (type === "head") {
     row.headApproval = action === "approve" ? true : false;
     row.headApprovalTime = timestamp;
@@ -261,7 +260,7 @@ const confirmApproval = () => {
     row.gsApproval = action === "approve" ? true : false;
     row.gsApprovalTime = timestamp;
   }
-  
+
   closeApprovalModals();
 };
 
@@ -284,7 +283,6 @@ const closeDetail = () => {
   showDetail.value = false;
   currentDetailRow.value = null;
 };
-
 
 const handleEdit = (id) => {
   console.log("Edit item:", id);
@@ -358,12 +356,13 @@ provide("toggleMobileMenu", toggleMobileMenu);
 </script>
 
 <template>
-  <div class="min-h-screen flex flex-col font-['Montserrat']">
+  <div class="h-screen flex flex-col font-['Montserrat']">
     <div class="flex flex-1 overflow-hidden">
-      <!-- Sidebar -->
-      <Aside />
+      <!-- Aside Sidebar - Push content style -->
+      <Aside :isOpen="isSidebarOpen" :onClose="closeSidebar" />
 
-      <div class="flex flex-col flex-1 w-full lg:ml-0 overflow-hidden">
+      <!-- Main Content Area -->
+      <div class="flex flex-col flex-1 min-w-0 overflow-hidden">
         <HeaderAdmin />
 
         <!-- Content -->
@@ -371,7 +370,6 @@ provide("toggleMobileMenu", toggleMobileMenu);
           <div
             class="bg-white rounded-lg shadow-md p-5 flex-1 flex flex-col overflow-y-auto"
           >
-            <!-- Content goes here -->
             <!-- Toolbar -->
             <div
               class="flex items-center gap-3 pb-4 border-b shrink-0 flex-none justify-end"
@@ -423,11 +421,9 @@ provide("toggleMobileMenu", toggleMobileMenu);
             </div>
             <!-- Tabel -->
             <div
-              class="flex-1 flex flex-col gap-4 bg-gray-50 p-1 rounded-lg border border-gray-200 overflow-hidden"
+              class="flex flex-col gap-4 bg-gray-50 p-1 rounded-lg border border-gray-200 min-h-0"
             >
-              <div
-                class="overflow-x-auto overflow-y-auto rounded-lg border bg-white max-h-105"
-              >
+              <div class="overflow-auto rounded-lg border bg-white max-h-full">
                 <table class="w-full border-collapse">
                   <thead>
                     <tr class="border-b-2 border-gray-400 bg-gray-50">
@@ -688,7 +684,9 @@ provide("toggleMobileMenu", toggleMobileMenu);
                       >
                         <div class="flex items-center justify-center gap-2">
                           <button
-                            @click="handleApprovalClick(row, 'trans', 'approve')"
+                            @click="
+                              handleApprovalClick(row, 'trans', 'approve')
+                            "
                             :class="[
                               'p-1.5 rounded-lg transition border-2',
                               row.transApproval === true
@@ -779,7 +777,7 @@ provide("toggleMobileMenu", toggleMobileMenu);
                         <button
                           type="button"
                           @click="openDetail(row)"
-                          class="px-3 py-1 rounded-md text-xs font-semibold  bg-gray-200 text-gray-700  hover:bg-gray-300  active:bg-gray-400 transition"
+                          class="px-3 py-1 rounded-md text-xs font-semibold bg-gray-200 text-gray-700 hover:bg-gray-300 active:bg-gray-400 transition"
                         >
                           Detail
                         </button>
@@ -790,7 +788,7 @@ provide("toggleMobileMenu", toggleMobileMenu);
               </div>
 
               <!-- Konten Filter -->
-               <div
+              <div
                 v-if="showFilter"
                 class="fixed inset-0 bg-black/70 flex items-center justify-center z-50 p-4"
               >
@@ -841,7 +839,8 @@ provide("toggleMobileMenu", toggleMobileMenu);
 
                   <!-- Filter Persetujuan -->
                   <div>
-                    <label class="block text-sm font-medium text-black mb-2 mt-4"
+                    <label
+                      class="block text-sm font-medium text-black mb-2 mt-4"
                       >Persetujuan</label
                     >
                     <div class="flex flex-wrap gap-4">
@@ -862,7 +861,10 @@ provide("toggleMobileMenu", toggleMobileMenu);
                                   backgroundColor: '#3B82F6',
                                   borderColor: '#1E40AF',
                                 }
-                              : { backgroundColor: 'white', borderColor: '#d1d5db' }
+                              : {
+                                  backgroundColor: 'white',
+                                  borderColor: '#d1d5db',
+                                }
                           "
                         />
                         <label
@@ -888,7 +890,10 @@ provide("toggleMobileMenu", toggleMobileMenu);
                                   backgroundColor: '#8B5CF6',
                                   borderColor: '#5B21B6',
                                 }
-                              : { backgroundColor: 'white', borderColor: '#d1d5db' }
+                              : {
+                                  backgroundColor: 'white',
+                                  borderColor: '#d1d5db',
+                                }
                           "
                         />
                         <label
@@ -914,7 +919,10 @@ provide("toggleMobileMenu", toggleMobileMenu);
                                   backgroundColor: '#EC4899',
                                   borderColor: '#9D174D',
                                 }
-                              : { backgroundColor: 'white', borderColor: '#d1d5db' }
+                              : {
+                                  backgroundColor: 'white',
+                                  borderColor: '#d1d5db',
+                                }
                           "
                         />
                         <label
@@ -940,7 +948,10 @@ provide("toggleMobileMenu", toggleMobileMenu);
                                   backgroundColor: '#F59E0B',
                                   borderColor: '#B45309',
                                 }
-                              : { backgroundColor: 'white', borderColor: '#d1d5db' }
+                              : {
+                                  backgroundColor: 'white',
+                                  borderColor: '#d1d5db',
+                                }
                           "
                         />
                         <label
@@ -954,7 +965,8 @@ provide("toggleMobileMenu", toggleMobileMenu);
 
                   <!-- Departemen -->
                   <div>
-                    <label class="block text-sm font-medium text-gray-800 mb-2 mt-2"
+                    <label
+                      class="block text-sm font-medium text-gray-800 mb-2 mt-2"
                       >Departemen</label
                     >
                     <div class="relative">
@@ -979,7 +991,8 @@ provide("toggleMobileMenu", toggleMobileMenu);
 
                   <!-- Lokasi -->
                   <div>
-                    <label class="block text-sm font-medium text-gray-800 mb-2 mt-2"
+                    <label
+                      class="block text-sm font-medium text-gray-800 mb-2 mt-2"
                       >Lokasi</label
                     >
                     <div class="relative">
@@ -1004,7 +1017,8 @@ provide("toggleMobileMenu", toggleMobileMenu);
 
                   <!-- Keperluan -->
                   <div>
-                    <label class="block text-sm font-medium text-gray-800 mb-2 mt-2"
+                    <label
+                      class="block text-sm font-medium text-gray-800 mb-2 mt-2"
                       >Keperluan</label
                     >
                     <div class="relative">
@@ -1029,7 +1043,8 @@ provide("toggleMobileMenu", toggleMobileMenu);
 
                   <!-- Layanan -->
                   <div>
-                    <label class="block text-sm font-medium text-gray-800 mb-2 mt-2"
+                    <label
+                      class="block text-sm font-medium text-gray-800 mb-2 mt-2"
                       >Layanan</label
                     >
                     <div class="relative">
@@ -1054,7 +1069,12 @@ provide("toggleMobileMenu", toggleMobileMenu);
 
                   <div class="flex justify-center gap-3 mt-6">
                     <button
-                      @click="() => { resetFilter(); closeFilter(); }"
+                      @click="
+                        () => {
+                          resetFilter();
+                          closeFilter();
+                        }
+                      "
                       class="px-6 md:px-6 py-2 text-sm md:text-base border border-gray-300 text-gray-700 rounded-xl hover:bg-gray-50 transition font-regular"
                     >
                       Reset
@@ -1075,216 +1095,284 @@ provide("toggleMobileMenu", toggleMobileMenu);
                 </div>
               </div>
 
-          <!-- Persetujuan Terima -->
-          <div
-            v-if="showPersetujuanTerima"
-            class="fixed inset-0 bg-black/70 flex items-center justify-center z-50 p-4"
-          >
-            <div
-              class="bg-white rounded-lg w-full max-w-md md:max-w-lg max-h-[90vh] overflow-y-auto shadow-[0_4px_6px_rgba(0,0,0,0.1)] p-6 md:p-8"
-            >
+              <!-- Persetujuan Terima -->
               <div
-                class="flex justify-between items-center mb-4 pb-3 border-b border-gray-200"
+                v-if="showPersetujuanTerima"
+                class="fixed inset-0 bg-black/70 flex items-center justify-center z-50 p-4"
               >
-                <h2 class="text-lg md:text-xl font-semibold text-gray-900">
-                  Konfirmasi {{ approvalActionLabel }}
-                </h2>
-                <button
-                  @click="closeApprovalModals"
-                  class="shrink-0 p-1 hover:bg-gray-100 rounded-md transition"
+                <div
+                  class="bg-white rounded-lg w-full max-w-md md:max-w-lg max-h-[90vh] overflow-y-auto shadow-[0_4px_6px_rgba(0,0,0,0.1)] p-6 md:p-8"
                 >
-                  <XMarkIcon
-                    class="w-6 h-6 text-gray-600 hover:text-gray-900"
-                  />
-                </button>
+                  <div
+                    class="flex justify-between items-center mb-4 pb-3 border-b border-gray-200"
+                  >
+                    <h2 class="text-lg md:text-xl font-semibold text-gray-900">
+                      Konfirmasi {{ approvalActionLabel }}
+                    </h2>
+                    <button
+                      @click="closeApprovalModals"
+                      class="shrink-0 p-1 hover:bg-gray-100 rounded-md transition"
+                    >
+                      <XMarkIcon
+                        class="w-6 h-6 text-gray-600 hover:text-gray-900"
+                      />
+                    </button>
+                  </div>
+
+                  <div class="mb-6">
+                    <p class="text-gray-700 text-base">
+                      Apakah sebagai
+                      <span class="font-semibold text-blue-600">{{
+                        approvalTypeLabel
+                      }}</span>
+                      anda yakin untuk melakukan
+                      <span class="font-semibold text-green-600">{{
+                        approvalActionLabel
+                      }}</span>
+                      ?
+                    </p>
+                  </div>
+
+                  <div class="flex justify-end gap-3">
+                    <button
+                      @click="closeApprovalModals"
+                      class="px-6 py-2 text-sm md:text-base border border-gray-300 text-gray-700 rounded-xl hover:bg-gray-50 transition font-regular"
+                    >
+                      Batal
+                    </button>
+                    <button
+                      @click="confirmApproval"
+                      class="px-6 py-2 text-sm md:text-base bg-linear-to-r from-green-500 to-green-600 text-white rounded-xl hover:opacity-90 transition font-regular"
+                    >
+                      Ya, Setuju
+                    </button>
+                  </div>
+                </div>
               </div>
 
-              <div class="mb-6">
-                <p class="text-gray-700 text-base">
-                  Apakah sebagai
-                  <span class="font-semibold text-blue-600">{{
-                    approvalTypeLabel
-                  }}</span>
-                  anda yakin untuk melakukan
-                  <span class="font-semibold text-green-600">{{
-                    approvalActionLabel
-                  }}</span>
-                  ?
-                </p>
-              </div>
-
-              <div class="flex justify-end gap-3">
-                <button
-                  @click="closeApprovalModals"
-                  class="px-6 py-2 text-sm md:text-base border border-gray-300 text-gray-700 rounded-xl hover:bg-gray-50 transition font-regular"
-                >
-                  Batal
-                </button>
-                <button
-                  @click="confirmApproval"
-                  class="px-6 py-2 text-sm md:text-base bg-linear-to-r from-green-500 to-green-600 text-white rounded-xl hover:opacity-90 transition font-regular"
-                >
-                  Ya, Setuju
-                </button>
-              </div>
-            </div>
-          </div>
-
-          <!-- Persetujuan Tolak -->
-          <div
-            v-if="showPersetujuanTolak"
-            class="fixed inset-0 bg-black/70 flex items-center justify-center z-50 p-4"
-          >
-            <div
-              class="bg-white rounded-lg w-full max-w-md md:max-w-lg max-h-[90vh] overflow-y-auto shadow-[0_4px_6px_rgba(0,0,0,0.1)] p-6 md:p-8"
-            >
+              <!-- Persetujuan Tolak -->
               <div
-                class="flex justify-between items-center mb-4 pb-3 border-b border-gray-200"
+                v-if="showPersetujuanTolak"
+                class="fixed inset-0 bg-black/70 flex items-center justify-center z-50 p-4"
               >
-                <h2 class="text-lg md:text-xl font-semibold text-gray-900">
-                  Konfirmasi {{ approvalActionLabel }}
-                </h2>
-                <button
-                  @click="closeApprovalModals"
-                  class="shrink-0 p-1 hover:bg-gray-100 rounded-md transition"
+                <div
+                  class="bg-white rounded-lg w-full max-w-md md:max-w-lg max-h-[90vh] overflow-y-auto shadow-[0_4px_6px_rgba(0,0,0,0.1)] p-6 md:p-8"
                 >
-                  <XMarkIcon
-                    class="w-6 h-6 text-gray-600 hover:text-gray-900"
-                  />
-                </button>
+                  <div
+                    class="flex justify-between items-center mb-4 pb-3 border-b border-gray-200"
+                  >
+                    <h2 class="text-lg md:text-xl font-semibold text-gray-900">
+                      Konfirmasi {{ approvalActionLabel }}
+                    </h2>
+                    <button
+                      @click="closeApprovalModals"
+                      class="shrink-0 p-1 hover:bg-gray-100 rounded-md transition"
+                    >
+                      <XMarkIcon
+                        class="w-6 h-6 text-gray-600 hover:text-gray-900"
+                      />
+                    </button>
+                  </div>
+
+                  <div class="mb-6">
+                    <p class="text-gray-700 text-base">
+                      Apakah sebagai
+                      <span class="font-semibold text-blue-600">{{
+                        approvalTypeLabel
+                      }}</span>
+                      anda yakin untuk melakukan
+                      <span class="font-semibold text-red-600">{{
+                        approvalActionLabel
+                      }}</span>
+                      ?
+                    </p>
+                  </div>
+
+                  <div class="flex justify-end gap-3">
+                    <button
+                      @click="closeApprovalModals"
+                      class="px-6 py-2 text-sm md:text-base border border-gray-300 text-gray-700 rounded-xl hover:bg-gray-50 transition font-regular"
+                    >
+                      Batal
+                    </button>
+                    <button
+                      @click="confirmApproval"
+                      class="px-6 py-2 text-sm md:text-base bg-linear-to-r from-red-500 to-red-600 text-white rounded-xl hover:opacity-90 transition font-regular"
+                    >
+                      Ya, Tolak
+                    </button>
+                  </div>
+                </div>
               </div>
 
-              <div class="mb-6">
-                <p class="text-gray-700 text-base">
-                  Apakah sebagai
-                  <span class="font-semibold text-blue-600">{{
-                    approvalTypeLabel
-                  }}</span>
-                  anda yakin untuk melakukan
-                  <span class="font-semibold text-red-600">{{
-                    approvalActionLabel
-                  }}</span>
-                  ?
-                </p>
-              </div>
-
-              <div class="flex justify-end gap-3">
-                <button
-                  @click="closeApprovalModals"
-                  class="px-6 py-2 text-sm md:text-base border border-gray-300 text-gray-700 rounded-xl hover:bg-gray-50 transition font-regular"
-                >
-                  Batal
-                </button>
-                <button
-                  @click="confirmApproval"
-                  class="px-6 py-2 text-sm md:text-base bg-linear-to-r from-red-500 to-red-600 text-white rounded-xl hover:opacity-90 transition font-regular"
-                >
-                  Ya, Tolak
-                </button>
-              </div>
-            </div>
-          </div>
-
-          <!-- Detail -->
-          <div
-            v-if="showDetail && currentDetailRow"
-            class="fixed inset-0 bg-black/70 flex items-center justify-center z-50 p-4"
-          >
-            <div
-              class="bg-white rounded-lg w-full max-w-md md:max-w-lg max-h-[90vh] overflow-y-auto shadow-[0_4px_6px_rgba(0,0,0,0.1)] p-6 md:p-8"
-            >
+              <!-- Detail -->
               <div
-                class="flex justify-between items-center mb-4 pb-3 border-b border-gray-200"
+                v-if="showDetail && currentDetailRow"
+                class="fixed inset-0 bg-black/70 flex items-center justify-center z-50 p-4"
               >
-                <h2 class="text-lg md:text-xl font-semibold text-gray-900">
-                  Detail Persetujuan
-                </h2>
-                <button
-                  @click="closeDetail"
-                  class="shrink-0 p-1 hover:bg-gray-100 rounded-md transition"
+                <div
+                  class="bg-white rounded-lg w-full max-w-md md:max-w-lg max-h-[90vh] overflow-y-auto shadow-[0_4px_6px_rgba(0,0,0,0.1)] p-6 md:p-8"
                 >
-                  <XMarkIcon
-                    class="w-6 h-6 text-gray-600 hover:text-gray-900"
-                  />
-                </button>
+                  <div
+                    class="flex justify-between items-center mb-4 pb-3 border-b border-gray-200"
+                  >
+                    <h2 class="text-lg md:text-xl font-semibold text-gray-900">
+                      Detail Persetujuan
+                    </h2>
+                    <button
+                      @click="closeDetail"
+                      class="shrink-0 p-1 hover:bg-gray-100 rounded-md transition"
+                    >
+                      <XMarkIcon
+                        class="w-6 h-6 text-gray-600 hover:text-gray-900"
+                      />
+                    </button>
+                  </div>
+
+                  <div class="space-y-4">
+                    <!-- Head Departemen -->
+                    <div class="border border-gray-200 rounded-lg p-4">
+                      <div class="flex justify-between items-start mb-2">
+                        <label class="text-sm font-semibold text-gray-700"
+                          >Head Dept</label
+                        >
+                        <span
+                          :class="[
+                            'text-sm font-semibold',
+                            currentDetailRow.headApproval === null
+                              ? 'text-gray-400'
+                              : currentDetailRow.headApproval === true
+                                ? 'text-green-600'
+                                : 'text-red-600',
+                          ]"
+                        >
+                          {{
+                            currentDetailRow.headApproval === null
+                              ? "Belum Dipilih"
+                              : currentDetailRow.headApproval === true
+                                ? "Disetujui"
+                                : "Ditolak"
+                          }}
+                        </span>
+                      </div>
+                      <input
+                        v-model="currentDetailRow.headApprovalTime"
+                        type="datetime-local"
+                        :disabled="currentDetailRow.headApproval === null"
+                        class="w-full p-2 text-xs border border-gray-300 bg-white text-gray-700 rounded-md focus:outline-none disabled:bg-gray-100"
+                      />
+                    </div>
+
+                    <!-- Transportasi -->
+                    <div class="border border-gray-200 rounded-lg p-4">
+                      <div class="flex justify-between items-start mb-2">
+                        <label class="text-sm font-semibold text-gray-700"
+                          >Transportasi</label
+                        >
+                        <span
+                          :class="[
+                            'text-sm font-semibold',
+                            currentDetailRow.transApproval === null
+                              ? 'text-gray-400'
+                              : currentDetailRow.transApproval === true
+                                ? 'text-green-600'
+                                : 'text-red-600',
+                          ]"
+                        >
+                          {{
+                            currentDetailRow.transApproval === null
+                              ? "Belum Dipilih"
+                              : currentDetailRow.transApproval === true
+                                ? "Disetujui"
+                                : "Ditolak"
+                          }}
+                        </span>
+                      </div>
+                      <input
+                        v-model="currentDetailRow.transApprovalTime"
+                        type="datetime-local"
+                        :disabled="currentDetailRow.transApproval === null"
+                        class="w-full p-2 text-xs border border-gray-300 bg-white text-gray-700 rounded-md focus:outline-none disabled:bg-gray-100"
+                      />
+                    </div>
+
+                    <!-- GA -->
+                    <div class="border border-gray-200 rounded-lg p-4">
+                      <div class="flex justify-between items-start mb-2">
+                        <label class="text-sm font-semibold text-gray-700"
+                          >GA</label
+                        >
+                        <span
+                          :class="[
+                            'text-sm font-semibold',
+                            currentDetailRow.gaApproval === null
+                              ? 'text-gray-400'
+                              : currentDetailRow.gaApproval === true
+                                ? 'text-green-600'
+                                : 'text-red-600',
+                          ]"
+                        >
+                          {{
+                            currentDetailRow.gaApproval === null
+                              ? "Belum Dipilih"
+                              : currentDetailRow.gaApproval === true
+                                ? "Disetujui"
+                                : "Ditolak"
+                          }}
+                        </span>
+                      </div>
+                      <input
+                        v-model="currentDetailRow.gaApprovalTime"
+                        type="datetime-local"
+                        :disabled="currentDetailRow.gaApproval === null"
+                        class="w-full p-2 text-xs border border-gray-300 bg-white text-gray-700 rounded-md focus:outline-none disabled:bg-gray-100"
+                      />
+                    </div>
+
+                    <!-- GS -->
+                    <div class="border border-gray-200 rounded-lg p-4">
+                      <div class="flex justify-between items-start mb-2">
+                        <label class="text-sm font-semibold text-gray-700"
+                          >GS</label
+                        >
+                        <span
+                          :class="[
+                            'text-sm font-semibold',
+                            currentDetailRow.gsApproval === null
+                              ? 'text-gray-400'
+                              : currentDetailRow.gsApproval === true
+                                ? 'text-green-600'
+                                : 'text-red-600',
+                          ]"
+                        >
+                          {{
+                            currentDetailRow.gsApproval === null
+                              ? "Belum Dipilih"
+                              : currentDetailRow.gsApproval === true
+                                ? "Disetujui"
+                                : "Ditolak"
+                          }}
+                        </span>
+                      </div>
+                      <input
+                        v-model="currentDetailRow.gsApprovalTime"
+                        type="datetime-local"
+                        :disabled="currentDetailRow.gsApproval === null"
+                        class="w-full p-2 text-xs border border-gray-300 bg-white text-gray-700 rounded-md focus:outline-none disabled:bg-gray-100"
+                      />
+                    </div>
+                  </div>
+
+                  <div class="flex justify-end gap-3 mt-6">
+                    <button
+                      @click="closeDetail"
+                      class="px-6 py-2 text-sm md:text-base border border-gray-300 text-gray-700 rounded-xl bg-red-100 hover:bg-red-200 transition font-regular"
+                    >
+                      Tutup
+                    </button>
+                  </div>
+                </div>
               </div>
-
-              <div class="space-y-4">
-                <!-- Head Departemen -->
-                <div class="border border-gray-200 rounded-lg p-4">
-                  <div class="flex justify-between items-start mb-2">
-                    <label class="text-sm font-semibold text-gray-700">Head Dept</label>
-                    <span :class="['text-sm font-semibold', currentDetailRow.headApproval === null ? 'text-gray-400' : currentDetailRow.headApproval === true ? 'text-green-600' : 'text-red-600']">
-                      {{ currentDetailRow.headApproval === null ? "Belum Dipilih" : currentDetailRow.headApproval === true ? "Disetujui" : "Ditolak" }}
-                    </span>
-                  </div>
-                  <input
-                    v-model="currentDetailRow.headApprovalTime"
-                    type="datetime-local"
-                    :disabled="currentDetailRow.headApproval === null"
-                    class="w-full p-2 text-xs border border-gray-300 bg-white text-gray-700 rounded-md focus:outline-none disabled:bg-gray-100"
-                  />
-                </div>
-
-                <!-- Transportasi -->
-                <div class="border border-gray-200 rounded-lg p-4">
-                  <div class="flex justify-between items-start mb-2">
-                    <label class="text-sm font-semibold text-gray-700">Transportasi</label>
-                    <span :class="['text-sm font-semibold', currentDetailRow.transApproval === null ? 'text-gray-400' : currentDetailRow.transApproval === true ? 'text-green-600' : 'text-red-600']">
-                      {{ currentDetailRow.transApproval === null ? "Belum Dipilih" : currentDetailRow.transApproval === true ? "Disetujui" : "Ditolak" }}
-                    </span>
-                  </div>
-                  <input
-                    v-model="currentDetailRow.transApprovalTime"
-                    type="datetime-local"
-                    :disabled="currentDetailRow.transApproval === null"
-                    class="w-full p-2 text-xs border border-gray-300 bg-white text-gray-700 rounded-md focus:outline-none disabled:bg-gray-100"
-                  />
-                </div>
-
-                <!-- GA -->
-                <div class="border border-gray-200 rounded-lg p-4">
-                  <div class="flex justify-between items-start mb-2">
-                    <label class="text-sm font-semibold text-gray-700">GA</label>
-                    <span :class="['text-sm font-semibold', currentDetailRow.gaApproval === null ? 'text-gray-400' : currentDetailRow.gaApproval === true ? 'text-green-600' : 'text-red-600']">
-                      {{ currentDetailRow.gaApproval === null ? "Belum Dipilih" : currentDetailRow.gaApproval === true ? "Disetujui" : "Ditolak" }}
-                    </span>
-                  </div>
-                  <input
-                    v-model="currentDetailRow.gaApprovalTime"
-                    type="datetime-local"
-                    :disabled="currentDetailRow.gaApproval === null"
-                    class="w-full p-2 text-xs border border-gray-300 bg-white text-gray-700 rounded-md focus:outline-none disabled:bg-gray-100"
-                  />
-                </div>
-
-                <!-- GS -->
-                <div class="border border-gray-200 rounded-lg p-4">
-                  <div class="flex justify-between items-start mb-2">
-                    <label class="text-sm font-semibold text-gray-700">GS</label>
-                    <span :class="['text-sm font-semibold', currentDetailRow.gsApproval === null ? 'text-gray-400' : currentDetailRow.gsApproval === true ? 'text-green-600' : 'text-red-600']">
-                      {{ currentDetailRow.gsApproval === null ? "Belum Dipilih" : currentDetailRow.gsApproval === true ? "Disetujui" : "Ditolak" }}
-                    </span>
-                  </div>
-                  <input
-                    v-model="currentDetailRow.gsApprovalTime"
-                    type="datetime-local"
-                    :disabled="currentDetailRow.gsApproval === null"
-                    class="w-full p-2 text-xs border border-gray-300 bg-white text-gray-700 rounded-md focus:outline-none disabled:bg-gray-100"
-                  />
-                </div>
-              </div>
-
-              <div class="flex justify-end gap-3 mt-6">
-                <button
-                  @click="closeDetail"
-                  class="px-6 py-2 text-sm md:text-base border border-gray-300 text-gray-700 rounded-xl bg-red-100 hover:bg-red-200 transition font-regular"
-                >
-                  Tutup
-                </button>
-              </div>
-            </div>
-          </div>
 
               <!-- Pagination -->
               <div

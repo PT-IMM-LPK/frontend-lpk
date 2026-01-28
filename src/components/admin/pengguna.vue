@@ -39,8 +39,24 @@ const formData = reactive({
 
 // Data Utama (Mock Data untuk testing)
 const tableData = ref([
-  { id: 1, namaPengguna: "Budi Santoso", nomorTelepon: "082123456789", tanggalLahir: "1990-05-15", departemen: "IT", role: "Admin" },
-  { id: 2, namaPengguna: "Siti Nurhaliza", nomorTelepon: "085987654321", tanggalLahir: "1992-08-22", departemen: "HR", role: "User" },
+  {
+    id: 1,
+    namaPengguna: "Budi Santoso",
+    nomorTelepon: "082123456789",
+    email: "example@gmail.com",
+    tanggalLahir: "1990-05-15",
+    departemen: "IT",
+    role: "Admin",
+  },
+  {
+    id: 2,
+    namaPengguna: "Siti Nurhaliza",
+    nomorTelepon: "085987654321",
+    email: "example2@gmail.com",
+    tanggalLahir: "1992-08-22",
+    departemen: "HR",
+    role: "User",
+  },
 ]);
 
 // Counter untuk ID baru
@@ -50,20 +66,24 @@ let idCounter = 6;
 // 1. Tambah Pengguna
 const submitTambah = () => {
   if (!formData.nama.trim()) return alert("Nama Pengguna tidak boleh kosong");
-  if (!formData.nomorTelepon.trim()) return alert("Nomor Telepon tidak boleh kosong");
+  if (!formData.nomorTelepon.trim())
+    return alert("Nomor Telepon tidak boleh kosong");
   if (!formData.tanggalLahir) return alert("Tanggal Lahir tidak boleh kosong");
-  if (!formData.departemen.trim()) return alert("Departemen tidak boleh kosong");
+  if (!formData.email) return alert("Email tidak boleh kosong");
+  if (!formData.departemen.trim())
+    return alert("Departemen tidak boleh kosong");
   if (!formData.role.trim()) return alert("Role tidak boleh kosong");
-  
+
   tableData.value.push({
     id: idCounter++,
     namaPengguna: formData.nama,
     nomorTelepon: formData.nomorTelepon,
+    email: formData.email,
     tanggalLahir: formData.tanggalLahir,
     departemen: formData.departemen,
     role: formData.role,
   });
-  
+
   alert("Pengguna berhasil ditambahkan");
   closeTambahPengguna();
 };
@@ -71,15 +91,19 @@ const submitTambah = () => {
 // 2. Update Pengguna
 const submitEdit = () => {
   if (!formData.nama.trim()) return alert("Nama Pengguna tidak boleh kosong");
-  if (!formData.nomorTelepon.trim()) return alert("Nomor Telepon tidak boleh kosong");
+  if (!formData.nomorTelepon.trim())
+    return alert("Nomor Telepon tidak boleh kosong");
+  if (!formData.email) return alert("Email tidak boleh kosong");
   if (!formData.tanggalLahir) return alert("Tanggal Lahir tidak boleh kosong");
-  if (!formData.departemen.trim()) return alert("Departemen tidak boleh kosong");
+  if (!formData.departemen.trim())
+    return alert("Departemen tidak boleh kosong");
   if (!formData.role.trim()) return alert("Role tidak boleh kosong");
 
   const index = tableData.value.findIndex((item) => item.id === formData.id);
   if (index > -1) {
     tableData.value[index].namaPengguna = formData.nama;
     tableData.value[index].nomorTelepon = formData.nomorTelepon;
+    tableData.value[index].email = formData.email;
     tableData.value[index].tanggalLahir = formData.tanggalLahir;
     tableData.value[index].departemen = formData.departemen;
     tableData.value[index].role = formData.role;
@@ -92,12 +116,13 @@ const submitEdit = () => {
 // 3. Hapus Pengguna (Bulk Delete)
 const handleDeleteSelected = () => {
   if (selectedRowIds.value.length === 0) return;
-  if (!confirm(`Hapus ${selectedRowIds.value.length} Pengguna terpilih?`)) return;
+  if (!confirm(`Hapus ${selectedRowIds.value.length} Pengguna terpilih?`))
+    return;
 
   tableData.value = tableData.value.filter(
-    (item) => !selectedRowIds.value.includes(item.id)
+    (item) => !selectedRowIds.value.includes(item.id),
   );
-  
+
   alert("Data terpilih berhasil dihapus");
   selectedRowIds.value = [];
   selectAllChecked.value = false;
@@ -110,6 +135,7 @@ const openTambahPengguna = () => {
   formData.id = null;
   formData.nama = "";
   formData.nomorTelepon = "";
+  formData.email = "";
   formData.tanggalLahir = "";
   formData.departemen = "";
   formData.role = "";
@@ -125,6 +151,7 @@ const openEditPengguna = (row) => {
   formData.id = row.id;
   formData.nama = row.namaPengguna;
   formData.nomorTelepon = row.nomorTelepon;
+  formData.email = row.email;
   formData.tanggalLahir = row.tanggalLahir;
   formData.departemen = row.departemen;
   formData.role = row.role;
@@ -145,7 +172,8 @@ const selectRow = (rowId) => {
     selectedRowIds.value.push(rowId);
   }
   selectAllChecked.value =
-    selectedRowIds.value.length === tableData.value.length && tableData.value.length > 0;
+    selectedRowIds.value.length === tableData.value.length &&
+    tableData.value.length > 0;
 };
 
 const toggleSelectAll = () => {
@@ -192,7 +220,7 @@ const startIndex = computed(() => {
 const endIndex = computed(() => {
   return Math.min(
     currentPage.value * itemsPerPage,
-    filteredTableData.value.length
+    filteredTableData.value.length,
   );
 });
 
@@ -232,7 +260,7 @@ const toggleMobileMenu = () => {
   isMobileMenuOpen.value = !isMobileMenuOpen.value;
 };
 
-provide('toggleMobileMenu', toggleMobileMenu);
+provide("toggleMobileMenu", toggleMobileMenu);
 </script>
 
 <template>
@@ -244,9 +272,11 @@ provide('toggleMobileMenu', toggleMobileMenu);
         <HeaderAdmin />
 
         <div class="bg-[#EFEFEF] flex-1 flex flex-col p-3 overflow-hidden">
-          <div class="bg-white rounded-lg shadow-md p-5 flex-1 flex flex-col overflow-y-auto">
+          <div
+            class="bg-white rounded-lg shadow-md p-5 flex-1 flex flex-col overflow-y-auto"
+          >
             <!-- Content goes here -->
-             <div
+            <div
               class="flex items-center gap-3 pb-4 border-b shrink-0 flex-none justify-between"
             >
               <div class="flex items-center gap-3">
@@ -351,6 +381,14 @@ provide('toggleMobileMenu', toggleMobileMenu);
                       </th>
                       <th
                         class="px-4 py-3 text-left text-sm font-semibold text-gray-700 whitespace-nowrap cursor-pointer hover:bg-gray-100 transition"
+                        @click="sortByField('email')"
+                      >
+                        <div class="flex items-center gap-2">
+                          <span>Email</span>
+                        </div>
+                      </th>
+                      <th
+                        class="px-4 py-3 text-left text-sm font-semibold text-gray-700 whitespace-nowrap cursor-pointer hover:bg-gray-100 transition"
                         @click="sortByField('tanggalLahir')"
                       >
                         <div class="flex items-center gap-2">
@@ -425,6 +463,11 @@ provide('toggleMobileMenu', toggleMobileMenu);
                       <td
                         class="px-4 py-3 text-gray-800 text-xs whitespace-nowrap"
                       >
+                        {{ row.email }}
+                      </td>
+                      <td
+                        class="px-4 py-3 text-gray-800 text-xs whitespace-nowrap"
+                      >
                         {{ row.tanggalLahir }}
                       </td>
                       <td
@@ -491,6 +534,7 @@ provide('toggleMobileMenu', toggleMobileMenu);
               </div>
             </div>
 
+            <!-- Konten Tambah Pengguna -->
             <div
               v-if="showTambahPengguna"
               class="fixed inset-0 bg-black/70 flex items-center justify-center z-50 p-4"
@@ -553,6 +597,24 @@ provide('toggleMobileMenu', toggleMobileMenu);
                 <div>
                   <label
                     class="block text-base font-medium text-black mb-2 mt-4"
+                    >Email</label
+                  >
+                  <div class="relative">
+                    <input
+                      v-model="formData.email"
+                      type="text"
+                      placeholder="Email"
+                      class="w-full p-2 pr-10 text-sm border border-[#C3C3C3] bg-white text-gray-700 rounded-md focus:outline-none focus:border-[#A90CF8] focus:ring-2 focus:ring-[#A90CF8]/20"
+                    />
+                    <PencilIcon
+                      class="absolute right-3 top-2.5 w-5 h-5 text-[#C3C3C3]"
+                    />
+                  </div>
+                </div>
+
+                <div>
+                  <label
+                    class="block text-base font-medium text-black mb-2 mt-4"
                     >Tanggal Lahir</label
                   >
                   <div class="relative">
@@ -573,11 +635,11 @@ provide('toggleMobileMenu', toggleMobileMenu);
                   <div class="relative">
                     <input
                       v-model="formData.departemen"
-                      type="text"
+                      type="otion"
                       placeholder="Departemen"
                       class="w-full p-2 pr-10 text-sm border border-[#C3C3C3] bg-white text-gray-700 rounded-md focus:outline-none focus:border-[#A90CF8] focus:ring-2 focus:ring-[#A90CF8]/20"
                     />
-                    <PencilIcon
+                    <ChevronDownIcon
                       class="absolute right-3 top-2.5 w-5 h-5 text-[#C3C3C3]"
                     />
                   </div>
@@ -591,7 +653,7 @@ provide('toggleMobileMenu', toggleMobileMenu);
                   <div class="relative">
                     <input
                       v-model="formData.role"
-                      type="text"
+                      type="option"
                       placeholder="Role"
                       class="w-full p-2 pr-10 text-sm border border-[#C3C3C3] bg-white text-gray-700 rounded-md focus:outline-none focus:border-[#A90CF8] focus:ring-2 focus:ring-[#A90CF8]/20"
                     />
@@ -619,6 +681,7 @@ provide('toggleMobileMenu', toggleMobileMenu);
               </div>
             </div>
 
+            <!-- Konten Edit Pengguna -->
             <div
               v-if="showEditPengguna"
               class="fixed inset-0 bg-black/70 flex items-center justify-center z-50 p-4"
@@ -670,6 +733,24 @@ provide('toggleMobileMenu', toggleMobileMenu);
                       v-model="formData.nomorTelepon"
                       type="text"
                       placeholder="Nomor Telepon"
+                      class="w-full p-2 pr-10 text-sm border border-[#C3C3C3] bg-white text-gray-700 rounded-md focus:outline-none focus:border-[#A90CF8] focus:ring-2 focus:ring-[#A90CF8]/20"
+                    />
+                    <PencilIcon
+                      class="absolute right-3 top-2.5 w-5 h-5 text-[#C3C3C3]"
+                    />
+                  </div>
+                </div>
+
+                <div>
+                  <label
+                    class="block text-base font-medium text-black mb-2 mt-4"
+                    >Email</label
+                  >
+                  <div class="relative">
+                    <input
+                      v-model="formData.email"
+                      type="text"
+                      placeholder="Email"
                       class="w-full p-2 pr-10 text-sm border border-[#C3C3C3] bg-white text-gray-700 rounded-md focus:outline-none focus:border-[#A90CF8] focus:ring-2 focus:ring-[#A90CF8]/20"
                     />
                     <PencilIcon

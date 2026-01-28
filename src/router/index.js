@@ -39,6 +39,11 @@ const router = createRouter({
             name: 'pengguna',
             component: () => import('../components/admin/pengguna.vue')
         },
+        {
+            path: '/profil',
+            name: 'profil',
+            component: () => import('../components/admin/profil.vue')
+        },
     ],
     scrollBehavior(to, from, savedPosition) {
         return { top: 0 }
