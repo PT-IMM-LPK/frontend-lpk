@@ -27,6 +27,10 @@ const showEditPengguna = ref(false);
 const sortOrder = ref("asc");
 const loading = ref(false); // Indikator loading
 
+// Data Options untuk Dropdown
+const departemenOptions = ref(["IT", "HR", "Finance"]);
+const roleOptions = ref(["Admin", "SuperAdmin"]);
+
 // State untuk Form Input (Create & Update)
 const formData = reactive({
   id: null,
@@ -633,14 +637,21 @@ provide("toggleMobileMenu", toggleMobileMenu);
                     >Departemen</label
                   >
                   <div class="relative">
-                    <input
+                    <select
                       v-model="formData.departemen"
-                      type="otion"
-                      placeholder="Departemen"
-                      class="w-full p-2 pr-10 text-sm border border-[#C3C3C3] bg-white text-gray-700 rounded-md focus:outline-none focus:border-[#A90CF8] focus:ring-2 focus:ring-[#A90CF8]/20"
-                    />
+                      class="w-full p-2 pr-10 text-sm border border-[#C3C3C3] bg-white text-gray-700 rounded-md focus:outline-none focus:border-[#A90CF8] focus:ring-2 focus:ring-[#A90CF8]/20 appearance-none cursor-pointer"
+                    >
+                      <option value="" disabled>Pilih Departemen</option>
+                      <option
+                        v-for="dept in departemenOptions"
+                        :key="dept"
+                        :value="dept"
+                      >
+                        {{ dept }}
+                      </option>
+                    </select>
                     <ChevronDownIcon
-                      class="absolute right-3 top-2.5 w-5 h-5 text-[#C3C3C3]"
+                      class="absolute right-3 top-2.5 w-5 h-5 text-[#C3C3C3] pointer-events-none"
                     />
                   </div>
                 </div>
@@ -651,14 +662,21 @@ provide("toggleMobileMenu", toggleMobileMenu);
                     >Role</label
                   >
                   <div class="relative">
-                    <input
+                    <select
                       v-model="formData.role"
-                      type="option"
-                      placeholder="Role"
-                      class="w-full p-2 pr-10 text-sm border border-[#C3C3C3] bg-white text-gray-700 rounded-md focus:outline-none focus:border-[#A90CF8] focus:ring-2 focus:ring-[#A90CF8]/20"
-                    />
+                      class="w-full p-2 pr-10 text-sm border border-[#C3C3C3] bg-white text-gray-700 rounded-md focus:outline-none focus:border-[#A90CF8] focus:ring-2 focus:ring-[#A90CF8]/20 appearance-none cursor-pointer"
+                    >
+                      <option value="" disabled>Pilih Role</option>
+                      <option
+                        v-for="role in roleOptions"
+                        :key="role"
+                        :value="role"
+                      >
+                        {{ role }}
+                      </option>
+                    </select>
                     <ChevronDownIcon
-                      class="absolute right-3 top-2.5 w-5 h-5 text-[#C3C3C3]"
+                      class="absolute right-3 top-2.5 w-5 h-5 text-[#C3C3C3] pointer-events-none"
                     />
                   </div>
                 </div>
@@ -780,14 +798,21 @@ provide("toggleMobileMenu", toggleMobileMenu);
                     >Departemen</label
                   >
                   <div class="relative">
-                    <input
+                    <select
                       v-model="formData.departemen"
-                      type="text"
-                      placeholder="Departemen"
-                      class="w-full p-2 pr-10 text-sm border border-[#C3C3C3] bg-white text-gray-700 rounded-md focus:outline-none focus:border-[#A90CF8] focus:ring-2 focus:ring-[#A90CF8]/20"
-                    />
-                    <PencilIcon
-                      class="absolute right-3 top-2.5 w-5 h-5 text-[#C3C3C3]"
+                      class="w-full p-2 pr-10 text-sm border border-[#C3C3C3] bg-white text-gray-700 rounded-md focus:outline-none focus:border-[#A90CF8] focus:ring-2 focus:ring-[#A90CF8]/20 appearance-none cursor-pointer"
+                    >
+                      <option value="" disabled>Pilih Departemen</option>
+                      <option
+                        v-for="dept in departemenOptions"
+                        :key="dept"
+                        :value="dept"
+                      >
+                        {{ dept }}
+                      </option>
+                    </select>
+                    <ChevronDownIcon
+                      class="absolute right-3 top-2.5 w-5 h-5 text-[#C3C3C3] pointer-events-none"
                     />
                   </div>
                 </div>
@@ -798,14 +823,21 @@ provide("toggleMobileMenu", toggleMobileMenu);
                     >Role</label
                   >
                   <div class="relative">
-                    <input
+                    <select
                       v-model="formData.role"
-                      type="text"
-                      placeholder="Role"
-                      class="w-full p-2 pr-10 text-sm border border-[#C3C3C3] bg-white text-gray-700 rounded-md focus:outline-none focus:border-[#A90CF8] focus:ring-2 focus:ring-[#A90CF8]/20"
-                    />
+                      class="w-full p-2 pr-10 text-sm border border-[#C3C3C3] bg-white text-gray-700 rounded-md focus:outline-none focus:border-[#A90CF8] focus:ring-2 focus:ring-[#A90CF8]/20 appearance-none cursor-pointer"
+                    >
+                      <option value="" disabled>Pilih Role</option>
+                      <option
+                        v-for="role in roleOptions"
+                        :key="role"
+                        :value="role"
+                      >
+                        {{ role }}
+                      </option>
+                    </select>
                     <ChevronDownIcon
-                      class="absolute right-3 top-2.5 w-5 h-5 text-[#C3C3C3]"
+                      class="absolute right-3 top-2.5 w-5 h-5 text-[#C3C3C3] pointer-events-none"
                     />
                   </div>
                 </div>

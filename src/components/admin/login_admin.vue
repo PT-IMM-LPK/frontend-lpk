@@ -12,6 +12,10 @@ const showForgotPasswordModal = ref(false);
 const phoneNumber = ref("");
 const password = ref("");
 
+const handleLogin = () => {
+  router.push({ name: "data-monitor" });
+};
+
 const togglePasswordVisibility = () => {
   showPassword.value = !showPassword.value;
 };
@@ -34,7 +38,7 @@ const handleWaLink = () => {
     class="w-screen h-screen fixed inset-0 flex items-center justify-center bg-center bg-cover bg-no-repeat"
     style="background-image: url(&quot;/image_asset/backgrond.png&quot;)"
   >
-  <Header/>
+    <Header />
     <div
       class="bg-white rounded-2xl shadow-2xl p-8 w-full max-w-md mx-4 border border-gray-100"
     >
@@ -96,8 +100,8 @@ const handleWaLink = () => {
           <!-- Sign In -->
           <div class="flex justify-center">
             <button
+              @click="handleLogin"
               type="submit"
-              href=""
               class="w-fit px-25 py-3 bg-[#523E95] text-white rounded-xl text-[16px] font-semilight cursor-pointer transition-colors duration-300 hover:bg-[#43317d] disabled:opacity-50 disabled:cursor-not-allowed"
             >
               Masuk
@@ -121,7 +125,8 @@ const handleWaLink = () => {
           <h3
             class="text-[#333] text-[17px] font-regular mb-5 leading-normal text-left mt-0"
           >
-            Silahkan hubungi Admin Transportasi Manajemen IMM agar kami dapat memberikan informasi lebih lanjut tentang password anda.
+            Silahkan hubungi Admin Transportasi Manajemen IMM agar kami dapat
+            memberikan informasi lebih lanjut tentang password anda.
           </h3>
 
           <p

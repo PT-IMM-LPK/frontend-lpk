@@ -2,10 +2,26 @@
 import { ref, provide } from "vue";
 import Aside from "../bar/aside.vue";
 import HeaderAdmin from "../bar/header-admin.vue";
-import { XMarkIcon, PencilSquareIcon } from "@heroicons/vue/24/solid";
+import {
+  XMarkIcon,
+  PencilSquareIcon,
+  ChevronDownIcon,
+} from "@heroicons/vue/24/solid";
 
 const isMobileMenuOpen = ref(false);
 const showEditAkun = ref(false);
+
+// Data Options untuk Dropdown
+const departemenOptions = ref(["IT", "HR", "Finance"]);
+
+// State untuk form edit
+const editFormData = ref({
+  nama: "",
+  nomorTelepon: "",
+  email: "",
+  tanggalLahir: "",
+  departemen: "",
+});
 
 // const { userProfile, fetchUserProfile, isLoading } = useUserProfile();
 
@@ -233,6 +249,30 @@ provide("toggleMobileMenu", toggleMobileMenu);
                   type="date"
                   class="w-full p-2 text-sm border border-[#C3C3C3] bg-white text-gray-700 rounded-sm focus:outline-none focus:border-[#A90CF8]"
                 />
+              </div>
+              <div>
+                <label
+                  class="block text-base font-medium text-gray-800 mb-2 mt-2"
+                  >Departemen</label
+                >
+                <div class="relative">
+                  <select
+                    v-model="editFormData.departemen"
+                    class="w-full p-2 pr-10 text-sm border border-[#C3C3C3] bg-white text-gray-700 rounded-sm focus:outline-none focus:border-[#A90CF8] focus:ring-2 focus:ring-[#A90CF8]/20 appearance-none cursor-pointer"
+                  >
+                    <option value="" disabled>Pilih Departemen</option>
+                    <option
+                      v-for="dept in departemenOptions"
+                      :key="dept"
+                      :value="dept"
+                    >
+                      {{ dept }}
+                    </option>
+                  </select>
+                  <ChevronDownIcon
+                    class="absolute right-3 top-2.5 w-5 h-5 text-[#C3C3C3] pointer-events-none"
+                  />
+                </div>
               </div>
 
               <div class="flex justify-end gap-3 mt-6">
