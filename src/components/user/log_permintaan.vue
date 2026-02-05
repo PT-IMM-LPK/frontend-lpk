@@ -2,7 +2,7 @@
 import { ref } from "vue";
 import Footer from "../bar/footer.vue";
 import Header from "../bar/header.vue";
-import { MagnifyingGlassIcon, CheckIcon } from "@heroicons/vue/24/outline";
+import { MagnifyingGlassIcon, CheckIcon, XMarkIcon } from "@heroicons/vue/24/outline";
 
 export default {
   components: {
@@ -10,6 +10,7 @@ export default {
     Header,
     MagnifyingGlassIcon,
     CheckIcon,
+    XMarkIcon
   },
   setup() {
     const s = ref("");
@@ -22,18 +23,11 @@ export default {
         waktuPeminjaman: "12/12/2026, 12:00:00",
         waktuSelesai: "13/12/2026, 12:00:00",
       },
-      {
-        id: "GA - TR - 2",
-        keperluan: "Kunjungan Client",
-        nama: "Jane Smith",
-        waktuPeminjaman: "15/12/2026, 09:00:00",
-        waktuSelesai: "15/12/2026, 17:00:00",
-      },
     ]);
 
     const tiketDitolak = ref([
       {
-        id: "GA - TR - 3",
+        id: "GA - TR - 2",
         keperluan: "Perjalanan Pribadi",
         nama: "Bob Wilson",
         waktuPeminjaman: "14/12/2026, 10:00:00",
@@ -135,8 +129,8 @@ export default {
                 <!-- Konten Tiket Terima -->
                 <div class="flex flex-col gap-3" v-if="hasilPencarian.length > 0">
                     <!-- Tiket Diterima -->
-                    <div v-if="statusPencarian === 'diterima'" v-for="tiket in hasilPencarian" :key="tiket.id" class="p-4 md:p-6 bg-[#C4FFC0] rounded-2xl shadow-sm border border-[#1AA13C] max-w-3xl text-left">
-                        <div class="flex flex-row gap-3 items-start">
+                    <div v-if="statusPencarian === 'diterima'" v-for="tiket in hasilPencarian" :key="tiket.id" class="p-4 md:p-4 bg-[#C4FFC0] rounded-2xl shadow-sm border border-[#1AA13C] max-w-3xl text-left">
+                        <div class="flex flex-row gap-3 items-center">
                             <div class="flex flex-col gap-1 flex-1">
                                 <span class="text-sm font-bold text-black">Nomor Tiket : {{ tiket.id }}</span>
                                 <span class="text-xs text-black">Keperluan : {{ tiket.keperluan }}</span>
@@ -154,8 +148,8 @@ export default {
                     </div>
 
                     <!-- Tiket Ditolak -->
-                    <div v-if="statusPencarian === 'ditolak'" v-for="tiket in hasilPencarian" :key="tiket.id" class="p-4 md:p-6 bg-[#FFC4C4] rounded-2xl shadow-sm border border-[#C41E1E] max-w-3xl text-left">
-                        <div class="flex flex-row gap-3 items-start">
+                    <div v-if="statusPencarian === 'ditolak'" v-for="tiket in hasilPencarian" :key="tiket.id" class="p-4 md:p-4 bg-[#FFC4C4] rounded-2xl shadow-sm border border-[#C41E1E] max-w-3xl text-left">
+                        <div class="flex flex-row gap-3 items-center">
                             <div class="flex flex-col gap-1 flex-1">
                                 <span class="text-sm font-bold text-black">Nomor Tiket : {{ tiket.id }}</span>
                                 <span class="text-xs text-black">Keperluan : {{ tiket.keperluan }}</span>
@@ -166,6 +160,7 @@ export default {
                             </div>
                             <div class="ml-auto flex items-center flex-col gap-1">
                                 <div class="px-4 py-2 bg-red-600 text-white font-bold text-sm rounded-lg shadow-md">
+                                  <XMarkIcon class="w-10 h-10 text-white mx-auto mb-1"/>
                                     <p class="text-xs">Ditolak</p>
                                 </div>
                             </div>

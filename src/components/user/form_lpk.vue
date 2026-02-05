@@ -51,18 +51,20 @@ export default {
             </p>
           </div>
 
+          <!-- KONTEN PERTANYAAN AKTIF -->
+
           <!-- Konten Input text -->
           <div
             class="p-4 md:p-6 bg-white rounded-2xl shadow-sm border border-zinc-200 max-w-3xl text-left">
             <h3
-              class="font-left text-xl sm:text-xl font-bold mb-3 text-black leading-tight">
-              Lokasi
+              class="font-left text-xl sm:text-xl font-bold mb-2 text-black leading-tight">
+              Input Text
             </h3>
             <div class="h-0.5 w-full bg-[#7800b5] rounded-lg mb-4"></div>
             <input
               v-model="formData.inputText"
               type="text"
-              placeholder="Masukkan nama"
+              placeholder="Input text"
               class="w-full px-3 py-2 border border-zinc-300 rounded-lg focus:outline-none focus:border-purple-600 text-sm text-black"
             />
           </div>
@@ -71,7 +73,7 @@ export default {
            <div
             class="p-4 md:p-6 bg-white rounded-2xl shadow-sm border border-zinc-200 max-w-3xl text-left">
             <h3
-              class="font-left text-xl sm:text-xl font-bold mb-3 text-black leading-tight">
+              class="font-left text-xl sm:text-xl font-bold mb-2 text-black leading-tight">
               Multiple Choice
             </h3>
             <div class="h-0.5 w-full bg-[#7800b5] rounded-lg mb-4"></div>
@@ -84,7 +86,7 @@ export default {
                   value="pool"
                   class="w-4 h-4 cursor-pointer accent-purple-600 appearance-none border-2 border-gray-400 rounded-full bg-gray-200 checked:bg-purple-600 checked:border-purple-600"
                 />
-                <span class="text-sm text-zinc-700">Kendaraan Pool</span>
+                <span class="text-sm text-zinc-700">Satu</span>
               </label>
               <label class="flex items-center gap-2 cursor-pointer">
                 <input
@@ -94,7 +96,7 @@ export default {
                   value="operasional"
                   class="w-4 h-4 cursor-pointer accent-purple-600 appearance-none border-2 border-gray-400 rounded-full bg-gray-200 checked:bg-purple-600 checked:border-purple-600"
                 />
-                <span class="text-sm text-zinc-700">Kendaraan Operasional</span>
+                <span class="text-sm text-zinc-700">Dua</span>
               </label>
             </div>
           </div>
@@ -103,18 +105,18 @@ export default {
           <div
             class="p-4 md:p-6 bg-white rounded-2xl shadow-sm border border-zinc-200 max-w-3xl text-left">
             <h3
-              class="font-left text-xl sm:text-xl font-bold mb-3 text-black leading-tight">
-              Tanggal dan Waktu Peminjaman
+              class="font-left text-xl sm:text-xl font-bold mb-2 text-black leading-tight">
+              Tanggal dan Waktu
             </h3>
             <div class="h-0.5 w-full bg-[#7800b5] rounded-lg mb-4"></div>
             <div class="flex flex-col sm:flex-column gap-3">
-                <p class="text-sm text-zinc-700">Dibutuhkan pada : </p>
+                <p class="text-sm text-zinc-700">Tanggal : </p>
               <input
                 v-model="formData.date"
                 type="datetime-local"
                 class="flex-1 px-3 py-2 border border-zinc-300 rounded-lg focus:outline-none focus:border-purple-600 text-sm"
               />
-              <p class="text-sm text-zinc-700">Kembali pada : </p>
+              <p class="text-sm text-zinc-700">Tanggal : </p>
               <input
                 v-model="formData.time"
                 type="datetime-local"
@@ -150,7 +152,7 @@ export default {
           <div
             class="p-4 md:p-6 bg-white rounded-2xl shadow-sm border border-zinc-200 max-w-3xl text-left">
             <h3
-              class="font-left text-xl sm:text-xl font-bold mb-3 text-black leading-tight">
+              class="font-left text-xl sm:text-xl font-bold mb-2 text-black leading-tight">
               Persetujuan
             </h3>
             <div class="h-0.5 w-full bg-[#7800b5] rounded-lg mb-4"></div>
