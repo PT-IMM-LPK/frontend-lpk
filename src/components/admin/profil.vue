@@ -1,5 +1,5 @@
 <script setup>
-import { ref, provide } from "vue";
+import { ref, provide, onMounted, computed } from "vue";
 import Aside from "../bar/aside.vue";
 import HeaderAdmin from "../bar/header-admin.vue";
 import {
@@ -8,11 +8,29 @@ import {
   ChevronDownIcon,
 } from "@heroicons/vue/24/solid";
 
+// API Configuration
+const API_BASE_URL = "http://localhost:3000/api";
+
+// Mobile menu state
 const isMobileMenuOpen = ref(false);
 const showEditAkun = ref(false);
+const loading = ref(false);
+const saving = ref(false);
+const errorMessage = ref("");
 
-// Data Options untuk Dropdown
-const departemenOptions = ref(["IT", "HR", "Finance"]);
+// User data state
+const userData = ref({
+  nomor: null,
+  nama: "",
+  email: "",
+  nomorTelepon: "",
+  tanggalLahir: "",
+  departemen: null,
+  role: "",
+});
+
+// Departemen options for dropdown
+const departemenOptions = ref([]);
 
 // State untuk form edit
 const editFormData = ref({
@@ -20,53 +38,181 @@ const editFormData = ref({
   nomorTelepon: "",
   email: "",
   tanggalLahir: "",
-  departemen: "",
+  departemenId: "",
 });
 
-// const { userProfile, fetchUserProfile, isLoading } = useUserProfile();
+// Computed properties for display
+const adminName = computed(() => userData.value.nama || "Nama tidak tersedia");
+const adminEmail = computed(
+  () => userData.value.email || "Email tidak tersedia",
+);
+const adminNoTelepon = computed(
+  () => userData.value.nomorTelepon || "Nomor tidak tersedia",
+);
+const adminTanggalLahir = computed(() => {
+  if (!userData.value.tanggalLahir) return "Tanggal tidak tersedia";
+  const date = new Date(userData.value.tanggalLahir);
+  return date.toLocaleDateString("id-ID", {
+    day: "2-digit",
+    month: "2-digit",
+    year: "numeric",
+  });
+});
+const adminDepartemen = computed(
+  () =>
+    userData.value.departemen?.namaDepartemen || "Departemen tidak tersedia",
+);
+const roleKerja = computed(() => {
+  const role = userData.value.role;
+  if (!role) return "Role tidak tersedia";
 
-// // Computed properties untuk data yang akan ditampilkan
-// const adminName = computed(() => userProfile.value?.full_name || 'Loading...');
-// const adminEmail = computed(() => userProfile.value?.email || 'Loading...');
-// const adminNoTelepon = computed(() => userProfile.value?.phone_number || 'Loading...');
-// const adminTanggalLahir = computed(() => {
-//   if (!userProfile.value?.birth_date) return 'Loading...';
-//   // Format tanggal dari YYYY-MM-DD ke DD/MM/YYYY
-//   const date = new Date(userProfile.value.birth_date);
-//   const day = String(date.getDate()).padStart(2, '0');
-//   const month = String(date.getMonth() + 1).padStart(2, '0');
-//   const year = date.getFullYear();
-//   return `${day}/${month}/${year}`;
-// });
-// const adminPerusahaan = computed(() => userProfile.value?.company?.nama_perusahaan || 'Loading...');
-// const adminDepartemen = computed(() => userProfile.value?.department?.nama_department || 'Loading...');
-// const adminStatusKaryawan = computed(() => userProfile.value?.work_status?.nama_status || 'Loading...');
-// const adminPosisiKerja = computed(() => userProfile.value?.position?.nama_posisi || 'Loading...');
-// const roleKerja = computed(() => {
-//   const roleMap = {
-//     'superadmin': 'Super Administrator',
-//     'admin': 'Administrator',
-//     'user': 'User'
-//   };
-//   return roleMap[userProfile.value?.role] || 'Loading...';
-// });
+  const roleMap = {
+    ADMIN: "Admin",
+    SUPER_ADMIN: "Super Admin",
+    KARYAWAN: "Karyawan",
+  };
+  return roleMap[role] || role;
+});
 
-// onMounted(async () => {
-//   await fetchUserProfile();
-// });
+// Get auth headers
+const getAuthHeaders = () => {
+  const token = localStorage.getItem("authToken");
+  return {
+    "Content-Type": "application/json",
+    Authorization: `Bearer ${token}`,
+  };
+};
 
+// Fetch user data from API
+const fetchUserData = async () => {
+  loading.value = true;
+  errorMessage.value = "";
+
+  try {
+    // Get user ID from localStorage
+    const storedUserData = localStorage.getItem("userData");
+    if (!storedUserData) {
+      errorMessage.value =
+        "Data pengguna tidak ditemukan. Silakan login ulang.";
+      return;
+    }
+
+    const parsedUserData = JSON.parse(storedUserData);
+    const userId = parsedUserData.nomor;
+
+    // Fetch fresh data from API
+    const response = await fetch(`${API_BASE_URL}/pengguna/${userId}`, {
+      headers: getAuthHeaders(),
+    });
+
+    const result = await response.json();
+
+    if (!response.ok) {
+      throw new Error(result.message || "Gagal mengambil data pengguna");
+    }
+
+    userData.value = result.data.pengguna;
+
+    // Also update localStorage with fresh data
+    localStorage.setItem("userData", JSON.stringify(result.data.pengguna));
+  } catch (error) {
+    console.error("Error fetching user data:", error);
+    // Fallback to localStorage data
+    const storedUserData = localStorage.getItem("userData");
+    if (storedUserData) {
+      userData.value = JSON.parse(storedUserData);
+    } else {
+      errorMessage.value = error.message;
+    }
+  } finally {
+    loading.value = false;
+  }
+};
+
+// Fetch departemen options
+const fetchDepartemen = async () => {
+  try {
+    const response = await fetch(`${API_BASE_URL}/departemen`, {
+      headers: getAuthHeaders(),
+    });
+    const result = await response.json();
+    if (result.success) {
+      departemenOptions.value = result.data.departemen;
+    }
+  } catch (error) {
+    console.error("Error fetching departemen:", error);
+  }
+};
+
+// Toggle mobile menu
 const toggleMobileMenu = () => {
   isMobileMenuOpen.value = !isMobileMenuOpen.value;
 };
 
+// Open edit modal and populate form
 const openEditAkun = () => {
+  editFormData.value = {
+    nama: userData.value.nama || "",
+    nomorTelepon: userData.value.nomorTelepon || "",
+    email: userData.value.email || "",
+    tanggalLahir: userData.value.tanggalLahir
+      ? new Date(userData.value.tanggalLahir).toISOString().split("T")[0]
+      : "",
+    departemenId: userData.value.departemen?.nomor || "",
+  };
   showEditAkun.value = true;
 };
 
 const closeEditAkun = () => {
   showEditAkun.value = false;
+  errorMessage.value = "";
 };
 
+// Save profile changes
+const saveProfile = async () => {
+  saving.value = true;
+  errorMessage.value = "";
+
+  try {
+    const response = await fetch(
+      `${API_BASE_URL}/pengguna/${userData.value.nomor}`,
+      {
+        method: "PUT",
+        headers: getAuthHeaders(),
+        body: JSON.stringify({
+          nama: editFormData.value.nama,
+          nomorTelepon: editFormData.value.nomorTelepon,
+          email: editFormData.value.email,
+          tanggalLahir: editFormData.value.tanggalLahir,
+          departemenId: editFormData.value.departemenId || null,
+        }),
+      },
+    );
+
+    const result = await response.json();
+
+    if (!response.ok) {
+      throw new Error(result.message || "Gagal menyimpan perubahan");
+    }
+
+    // Refresh user data
+    await fetchUserData();
+    closeEditAkun();
+    alert("Profil berhasil diperbarui!");
+  } catch (error) {
+    console.error("Error saving profile:", error);
+    errorMessage.value = error.message;
+  } finally {
+    saving.value = false;
+  }
+};
+
+// Lifecycle
+onMounted(async () => {
+  await Promise.all([fetchUserData(), fetchDepartemen()]);
+});
+
+provide("isMobileMenuOpen", isMobileMenuOpen);
 provide("toggleMobileMenu", toggleMobileMenu);
 </script>
 
@@ -200,6 +346,7 @@ provide("toggleMobileMenu", toggleMobileMenu);
                 <div class="relative">
                   <input
                     type="text"
+                    v-model="editFormData.nama"
                     placeholder="Masukkan nama"
                     class="w-full p-2 text-sm border border-[#C3C3C3] bg-white text-gray-700 rounded-sm focus:outline-none focus:border-[#A90CF8]"
                   />
@@ -216,6 +363,7 @@ provide("toggleMobileMenu", toggleMobileMenu);
                 <div class="relative">
                   <input
                     type="text"
+                    v-model="editFormData.nomorTelepon"
                     placeholder="081xxxxxxxx"
                     class="w-full p-2 pr-10 text-sm border border-[#C3C3C3] bg-white text-gray-700 rounded-sm focus:outline-none focus:border-[#A90CF8]"
                   />
@@ -231,7 +379,8 @@ provide("toggleMobileMenu", toggleMobileMenu);
                 >
                 <div class="relative">
                   <input
-                    type="text"
+                    type="email"
+                    v-model="editFormData.email"
                     placeholder="email@example.com"
                     class="w-full p-2 pr-10 text-sm border border-[#C3C3C3] bg-white text-gray-700 rounded-sm focus:outline-none focus:border-[#A90CF8]"
                   />
@@ -247,6 +396,7 @@ provide("toggleMobileMenu", toggleMobileMenu);
                 >
                 <input
                   type="date"
+                  v-model="editFormData.tanggalLahir"
                   class="w-full p-2 text-sm border border-[#C3C3C3] bg-white text-gray-700 rounded-sm focus:outline-none focus:border-[#A90CF8]"
                 />
               </div>
@@ -257,16 +407,16 @@ provide("toggleMobileMenu", toggleMobileMenu);
                 >
                 <div class="relative">
                   <select
-                    v-model="editFormData.departemen"
+                    v-model="editFormData.departemenId"
                     class="w-full p-2 pr-10 text-sm border border-[#C3C3C3] bg-white text-gray-700 rounded-sm focus:outline-none focus:border-[#A90CF8] focus:ring-2 focus:ring-[#A90CF8]/20 appearance-none cursor-pointer"
                   >
-                    <option value="" disabled>Pilih Departemen</option>
+                    <option value="">Pilih Departemen</option>
                     <option
                       v-for="dept in departemenOptions"
-                      :key="dept"
-                      :value="dept"
+                      :key="dept.nomor"
+                      :value="dept.nomor"
                     >
-                      {{ dept }}
+                      {{ dept.namaDepartemen }}
                     </option>
                   </select>
                   <ChevronDownIcon
@@ -275,15 +425,26 @@ provide("toggleMobileMenu", toggleMobileMenu);
                 </div>
               </div>
 
+              <!-- Error Message -->
+              <div
+                v-if="errorMessage"
+                class="mt-4 p-3 bg-red-100 border border-red-300 rounded-md"
+              >
+                <p class="text-sm text-red-700">{{ errorMessage }}</p>
+              </div>
+
               <div class="flex justify-end gap-3 mt-6">
                 <button
-                  class="px-8 md:px-10 py-2 text-sm md:text-base bg-linear-to-r from-[#A90CF8] to-[#9600E1] text-white rounded-xl hover:opacity-90 transition font-regular"
+                  @click="saveProfile"
+                  :disabled="saving"
+                  class="px-8 md:px-10 py-2 text-sm md:text-base bg-linear-to-r from-[#A90CF8] to-[#9600E1] text-white rounded-xl hover:opacity-90 transition font-regular disabled:opacity-50 disabled:cursor-not-allowed"
                 >
-                  Simpan
+                  {{ saving ? "Menyimpan..." : "Simpan" }}
                 </button>
                 <button
                   @click="closeEditAkun"
-                  class="px-6 md:px-6 py-2 text-sm md:text-base border border-gray-300 bg-red-600 text-white rounded-xl hover:bg-red-700 transition font-regular"
+                  :disabled="saving"
+                  class="px-6 md:px-6 py-2 text-sm md:text-base border border-gray-300 bg-red-600 text-white rounded-xl hover:bg-red-700 transition font-regular disabled:opacity-50"
                 >
                   Batal
                 </button>

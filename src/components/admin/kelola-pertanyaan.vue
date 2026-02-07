@@ -227,6 +227,7 @@ const simpanPertanyaan = () => {
   alert("Pertanyaan berhasil ditambahkan!");
 };
 
+provide("isMobileMenuOpen", isMobileMenuOpen);
 provide("toggleMobileMenu", toggleMobileMenu);
 </script>
 
@@ -234,7 +235,7 @@ provide("toggleMobileMenu", toggleMobileMenu);
   <div class="h-screen flex flex-col font-['Montserrat']">
     <div class="flex flex-1 overflow-hidden">
       <!-- Sidebar -->
-      <Aside :isOpen="isSidebarOpen" :onClose="closeSidebar" />
+      <Aside />
 
       <!-- Main Content -->
       <div class="flex flex-col flex-1 min-w-0 overflow-hidden">

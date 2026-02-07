@@ -5,15 +5,62 @@ import { EyeIcon, EyeSlashIcon } from "@heroicons/vue/24/solid";
 import { PhoneIcon } from "@heroicons/vue/24/outline";
 import Header from "../bar/header.vue";
 
+// API Configuration
+const API_BASE_URL = "http://localhost:3000/api";
+
 const router = useRouter();
 const showPassword = ref(false);
 const showForgotPasswordModal = ref(false);
+const loading = ref(false);
+const errorMessage = ref("");
 
 const phoneNumber = ref("");
 const password = ref("");
 
-const handleLogin = () => {
-  router.push({ name: "data-monitor" });
+const handleLogin = async () => {
+  // Validasi input
+  if (!phoneNumber.value.trim()) {
+    errorMessage.value = "Nomor telepon wajib diisi";
+    return;
+  }
+  if (!password.value.trim()) {
+    errorMessage.value = "Password wajib diisi";
+    return;
+  }
+
+  loading.value = true;
+  errorMessage.value = "";
+
+  try {
+    const response = await fetch(`${API_BASE_URL}/auth/login`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        nomorTelepon: phoneNumber.value,
+        password: password.value,
+      }),
+    });
+
+    const result = await response.json();
+
+    if (!response.ok) {
+      throw new Error(result.message || "Login gagal");
+    }
+
+    // Simpan token dan user data ke localStorage
+    localStorage.setItem("authToken", result.data.token);
+    localStorage.setItem("userData", JSON.stringify(result.data.user));
+
+    // Redirect ke dashboard
+    router.push({ name: "data-monitor" });
+  } catch (error) {
+    console.error("Login error:", error);
+    errorMessage.value = error.message || "Terjadi kesalahan saat login";
+  } finally {
+    loading.value = false;
+  }
 };
 
 const togglePasswordVisibility = () => {
@@ -69,7 +116,7 @@ const handleWaLink = () => {
               name="password"
               v-model="password"
               :type="showPassword ? 'text' : 'password'"
-              placeholder="Password"
+              placeholder="Password (nama + tanggal lahir)"
               autocomplete="current-password"
               class="px-3.75 py-3 border border-[#a1a1a1] bg-white rounded-lg text-[14px] text-[#333] transition-colors duration-300 focus:outline-none focus:border-[#646cff] focus:ring-3 focus:ring-[#646cff]/10"
             />
@@ -97,14 +144,23 @@ const handleWaLink = () => {
             </a>
           </div>
 
+          <!-- Error Message -->
+          <div
+            v-if="errorMessage"
+            class="p-3 bg-red-50 border border-red-200 rounded-lg text-red-600 text-sm text-left"
+          >
+            {{ errorMessage }}
+          </div>
+
           <!-- Sign In -->
           <div class="flex justify-center">
             <button
               @click="handleLogin"
+              :disabled="loading"
               type="submit"
               class="w-fit px-25 py-3 bg-[#523E95] text-white rounded-xl text-[16px] font-semilight cursor-pointer transition-colors duration-300 hover:bg-[#43317d] disabled:opacity-50 disabled:cursor-not-allowed"
             >
-              Masuk
+              {{ loading ? "Memuat..." : "Masuk" }}
             </button>
           </div>
           <p

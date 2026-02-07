@@ -352,6 +352,7 @@ const uniqueLayanan = computed(() => {
 });
 
 // Provide untuk digunakan di header
+provide("isMobileMenuOpen", isMobileMenuOpen);
 provide("toggleMobileMenu", toggleMobileMenu);
 </script>
 
@@ -359,7 +360,7 @@ provide("toggleMobileMenu", toggleMobileMenu);
   <div class="h-screen flex flex-col font-['Montserrat']">
     <div class="flex flex-1 overflow-hidden">
       <!-- Aside Sidebar - Push content style -->
-      <Aside :isOpen="isSidebarOpen" :onClose="closeSidebar" />
+      <Aside />
 
       <!-- Main Content Area -->
       <div class="flex flex-col flex-1 min-w-0 overflow-hidden">

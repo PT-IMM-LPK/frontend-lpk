@@ -1,5 +1,5 @@
 <script setup>
-import { ref, computed, reactive, provide } from "vue";
+import { ref, computed, reactive, provide, onMounted } from "vue";
 import Aside from "../bar/aside.vue";
 import HeaderAdmin from "../bar/header-admin.vue";
 import {
@@ -15,6 +15,17 @@ import {
 } from "@heroicons/vue/24/outline";
 import { PencilIcon } from "@heroicons/vue/24/solid";
 
+// --- API CONFIGURATION ---
+const API_BASE_URL = "http://localhost:3000/api";
+
+const getAuthHeaders = () => {
+  const token = localStorage.getItem("authToken");
+  return {
+    "Content-Type": "application/json",
+    ...(token && { Authorization: `Bearer ${token}` }),
+  };
+};
+
 // --- STATE ---
 const isMobileMenuOpen = ref(false);
 const selectedRowIds = ref([]);
@@ -25,111 +36,205 @@ const itemsPerPage = 10;
 const showTambahPengguna = ref(false);
 const showEditPengguna = ref(false);
 const sortOrder = ref("asc");
-const loading = ref(false); // Indikator loading
+const loading = ref(false);
+const errorMessage = ref("");
 
 // Data Options untuk Dropdown
-const departemenOptions = ref(["IT", "HR", "Finance"]);
-const roleOptions = ref(["Admin", "SuperAdmin"]);
+const departemenOptions = ref([]);
+const roleOptions = ref(["Admin", "Super Admin"]);
 
 // State untuk Form Input (Create & Update)
 const formData = reactive({
   id: null,
   nama: "",
+  email: "",
+  password: "",
   nomorTelepon: "",
   tanggalLahir: "",
-  departemen: "",
+  departemenId: "",
   role: "",
 });
 
-// Data Utama (Mock Data untuk testing)
-const tableData = ref([
-  {
-    id: 1,
-    namaPengguna: "Budi Santoso",
-    nomorTelepon: "082123456789",
-    email: "example@gmail.com",
-    tanggalLahir: "1990-05-15",
-    departemen: "IT",
-    role: "Admin",
-  },
-  {
-    id: 2,
-    namaPengguna: "Siti Nurhaliza",
-    nomorTelepon: "085987654321",
-    email: "example2@gmail.com",
-    tanggalLahir: "1992-08-22",
-    departemen: "HR",
-    role: "User",
-  },
-]);
+// Data Utama
+const tableData = ref([]);
 
-// Counter untuk ID baru
-let idCounter = 6;
+// --- API FUNCTIONS ---
+
+// Fetch semua pengguna dari backend
+const fetchPengguna = async () => {
+  loading.value = true;
+  errorMessage.value = "";
+  try {
+    const response = await fetch(`${API_BASE_URL}/pengguna`, {
+      headers: getAuthHeaders(),
+    });
+
+    if (!response.ok) {
+      throw new Error(`HTTP error! status: ${response.status}`);
+    }
+
+    const result = await response.json();
+
+    if (result.success && result.data?.pengguna) {
+      tableData.value = result.data.pengguna.map((p) => ({
+        id: p.nomor,
+        namaPengguna: p.nama,
+        email: p.email,
+        nomorTelepon: p.nomorTelepon || "",
+        tanggalLahir: p.tanggalLahir ? p.tanggalLahir.split("T")[0] : "",
+        departemen: p.departemen?.namaDepartemen || "-",
+        departemenId: p.departemen?.nomor || null,
+        role: p.role,
+      }));
+    }
+  } catch (error) {
+    console.error("Error fetching pengguna:", error);
+    errorMessage.value = "Gagal memuat data pengguna";
+  } finally {
+    loading.value = false;
+  }
+};
+
+// Fetch departemen untuk dropdown
+const fetchDepartemen = async () => {
+  try {
+    const response = await fetch(`${API_BASE_URL}/departemen`, {
+      headers: getAuthHeaders(),
+    });
+
+    if (!response.ok) {
+      throw new Error(`HTTP error! status: ${response.status}`);
+    }
+
+    const result = await response.json();
+
+    if (result.success && result.data?.departemen) {
+      departemenOptions.value = result.data.departemen.map((d) => ({
+        id: d.nomor,
+        nama: d.namaDepartemen,
+      }));
+    }
+  } catch (error) {
+    console.error("Error fetching departemen:", error);
+  }
+};
 
 // --- LOCAL ACTIONS ---
 // 1. Tambah Pengguna
-const submitTambah = () => {
+const submitTambah = async () => {
   if (!formData.nama.trim()) return alert("Nama Pengguna tidak boleh kosong");
-  if (!formData.nomorTelepon.trim())
-    return alert("Nomor Telepon tidak boleh kosong");
-  if (!formData.tanggalLahir) return alert("Tanggal Lahir tidak boleh kosong");
-  if (!formData.email) return alert("Email tidak boleh kosong");
-  if (!formData.departemen.trim())
-    return alert("Departemen tidak boleh kosong");
-  if (!formData.role.trim()) return alert("Role tidak boleh kosong");
+  if (!formData.email.trim()) return alert("Email tidak boleh kosong");
+  if (!formData.tanggalLahir)
+    return alert("Tanggal Lahir tidak boleh kosong (untuk password)");
+  if (!formData.role) return alert("Role tidak boleh kosong");
 
-  tableData.value.push({
-    id: idCounter++,
-    namaPengguna: formData.nama,
-    nomorTelepon: formData.nomorTelepon,
-    email: formData.email,
-    tanggalLahir: formData.tanggalLahir,
-    departemen: formData.departemen,
-    role: formData.role,
-  });
+  // Auto-generate password: nama (lowercase) + tanggalLahir (ddmmyyyy)
+  const date = new Date(formData.tanggalLahir);
+  const day = String(date.getDate()).padStart(2, "0");
+  const month = String(date.getMonth() + 1).padStart(2, "0");
+  const year = date.getFullYear();
+  const generatedPassword = `${formData.nama.toLowerCase()}${day}${month}${year}`;
 
-  alert("Pengguna berhasil ditambahkan");
-  closeTambahPengguna();
+  loading.value = true;
+  try {
+    const response = await fetch(`${API_BASE_URL}/pengguna`, {
+      method: "POST",
+      headers: getAuthHeaders(),
+      body: JSON.stringify({
+        nama: formData.nama,
+        email: formData.email,
+        password: generatedPassword,
+        nomorTelepon: formData.nomorTelepon,
+        tanggalLahir: formData.tanggalLahir || null,
+        departemenId: formData.departemenId || null,
+        role: formData.role,
+      }),
+    });
+
+    const result = await response.json();
+
+    if (!response.ok) {
+      throw new Error(result.message || "Gagal menambah pengguna");
+    }
+
+    alert("Pengguna berhasil ditambahkan");
+    closeTambahPengguna();
+    await fetchPengguna();
+  } catch (error) {
+    console.error("Error creating pengguna:", error);
+    alert(`Error: ${error.message}`);
+  } finally {
+    loading.value = false;
+  }
 };
 
 // 2. Update Pengguna
-const submitEdit = () => {
+const submitEdit = async () => {
   if (!formData.nama.trim()) return alert("Nama Pengguna tidak boleh kosong");
-  if (!formData.nomorTelepon.trim())
-    return alert("Nomor Telepon tidak boleh kosong");
-  if (!formData.email) return alert("Email tidak boleh kosong");
-  if (!formData.tanggalLahir) return alert("Tanggal Lahir tidak boleh kosong");
-  if (!formData.departemen.trim())
-    return alert("Departemen tidak boleh kosong");
-  if (!formData.role.trim()) return alert("Role tidak boleh kosong");
+  if (!formData.email.trim()) return alert("Email tidak boleh kosong");
 
-  const index = tableData.value.findIndex((item) => item.id === formData.id);
-  if (index > -1) {
-    tableData.value[index].namaPengguna = formData.nama;
-    tableData.value[index].nomorTelepon = formData.nomorTelepon;
-    tableData.value[index].email = formData.email;
-    tableData.value[index].tanggalLahir = formData.tanggalLahir;
-    tableData.value[index].departemen = formData.departemen;
-    tableData.value[index].role = formData.role;
+  loading.value = true;
+  try {
+    const response = await fetch(`${API_BASE_URL}/pengguna/${formData.id}`, {
+      method: "PUT",
+      headers: getAuthHeaders(),
+      body: JSON.stringify({
+        nama: formData.nama,
+        email: formData.email,
+        nomorTelepon: formData.nomorTelepon,
+        tanggalLahir: formData.tanggalLahir || null,
+        departemenId: formData.departemenId || null,
+        role: formData.role,
+      }),
+    });
+
+    const result = await response.json();
+
+    if (!response.ok) {
+      throw new Error(result.message || "Gagal mengupdate pengguna");
+    }
+
+    alert("Pengguna berhasil diperbarui");
+    closeEditPengguna();
+    await fetchPengguna();
+  } catch (error) {
+    console.error("Error updating pengguna:", error);
+    alert(`Error: ${error.message}`);
+  } finally {
+    loading.value = false;
   }
-
-  alert("Pengguna berhasil diperbarui");
-  closeEditPengguna();
 };
 
 // 3. Hapus Pengguna (Bulk Delete)
-const handleDeleteSelected = () => {
+const handleDeleteSelected = async () => {
   if (selectedRowIds.value.length === 0) return;
   if (!confirm(`Hapus ${selectedRowIds.value.length} Pengguna terpilih?`))
     return;
 
-  tableData.value = tableData.value.filter(
-    (item) => !selectedRowIds.value.includes(item.id),
-  );
+  loading.value = true;
+  try {
+    for (const id of selectedRowIds.value) {
+      const response = await fetch(`${API_BASE_URL}/pengguna/${id}`, {
+        method: "DELETE",
+        headers: getAuthHeaders(),
+      });
 
-  alert("Data terpilih berhasil dihapus");
-  selectedRowIds.value = [];
-  selectAllChecked.value = false;
+      if (!response.ok) {
+        const result = await response.json();
+        throw new Error(result.message || `Gagal menghapus pengguna ID ${id}`);
+      }
+    }
+
+    alert("Data terpilih berhasil dihapus");
+    selectedRowIds.value = [];
+    selectAllChecked.value = false;
+    await fetchPengguna();
+  } catch (error) {
+    console.error("Error deleting pengguna:", error);
+    alert(`Error: ${error.message}`);
+  } finally {
+    loading.value = false;
+  }
 };
 
 // --- MODAL CONTROLLERS ---
@@ -138,10 +243,11 @@ const openTambahPengguna = () => {
   // Reset form
   formData.id = null;
   formData.nama = "";
-  formData.nomorTelepon = "";
   formData.email = "";
+  formData.password = "";
+  formData.nomorTelepon = "";
   formData.tanggalLahir = "";
-  formData.departemen = "";
+  formData.departemenId = "";
   formData.role = "";
   showTambahPengguna.value = true;
 };
@@ -154,10 +260,10 @@ const closeTambahPengguna = () => {
 const openEditPengguna = (row) => {
   formData.id = row.id;
   formData.nama = row.namaPengguna;
-  formData.nomorTelepon = row.nomorTelepon;
   formData.email = row.email;
+  formData.nomorTelepon = row.nomorTelepon;
   formData.tanggalLahir = row.tanggalLahir;
-  formData.departemen = row.departemen;
+  formData.departemenId = row.departemenId || "";
   formData.role = row.role;
   showEditPengguna.value = true;
 };
@@ -259,12 +365,27 @@ const sortByField = (field) => {
   currentPage.value = 1;
 };
 
+// Format role display
+const formatRole = (role) => {
+  const roleMap = {
+    ADMIN: "Admin",
+    SUPER_ADMIN: "Super Admin",
+  };
+  return roleMap[role] || role;
+};
+
 // Lifecycle
 const toggleMobileMenu = () => {
   isMobileMenuOpen.value = !isMobileMenuOpen.value;
 };
 
+provide("isMobileMenuOpen", isMobileMenuOpen);
 provide("toggleMobileMenu", toggleMobileMenu);
+
+// Fetch data on mount
+onMounted(async () => {
+  await Promise.all([fetchPengguna(), fetchDepartemen()]);
+});
 </script>
 
 <template>
@@ -327,7 +448,7 @@ provide("toggleMobileMenu", toggleMobileMenu);
               class="flex-1 flex flex-col gap-4 bg-gray-50 p-1 rounded-lg border border-gray-200 overflow-hidden"
             >
               <div
-                class="overflow-x-auto overflow-y-auto rounded-lg border bg-white max-h-105"
+                class="overflow-x-auto overflow-y-auto rounded-lg border bg-white"
               >
                 <div v-if="loading" class="p-4 text-center text-gray-500">
                   Memuat data...
@@ -482,7 +603,7 @@ provide("toggleMobileMenu", toggleMobileMenu);
                       <td
                         class="px-4 py-3 text-gray-800 text-xs whitespace-nowrap"
                       >
-                        {{ row.role }}
+                        {{ formatRole(row.role) }}
                       </td>
                       <td
                         class="px-4 py-3 text-gray-800 text-xs whitespace-nowrap text-right"
@@ -638,16 +759,16 @@ provide("toggleMobileMenu", toggleMobileMenu);
                   >
                   <div class="relative">
                     <select
-                      v-model="formData.departemen"
+                      v-model="formData.departemenId"
                       class="w-full p-2 pr-10 text-sm border border-[#C3C3C3] bg-white text-gray-700 rounded-md focus:outline-none focus:border-[#A90CF8] focus:ring-2 focus:ring-[#A90CF8]/20 appearance-none cursor-pointer"
                     >
                       <option value="" disabled>Pilih Departemen</option>
                       <option
                         v-for="dept in departemenOptions"
-                        :key="dept"
-                        :value="dept"
+                        :key="dept.id"
+                        :value="dept.id"
                       >
-                        {{ dept }}
+                        {{ dept.nama }}
                       </option>
                     </select>
                     <ChevronDownIcon
@@ -799,16 +920,16 @@ provide("toggleMobileMenu", toggleMobileMenu);
                   >
                   <div class="relative">
                     <select
-                      v-model="formData.departemen"
+                      v-model="formData.departemenId"
                       class="w-full p-2 pr-10 text-sm border border-[#C3C3C3] bg-white text-gray-700 rounded-md focus:outline-none focus:border-[#A90CF8] focus:ring-2 focus:ring-[#A90CF8]/20 appearance-none cursor-pointer"
                     >
                       <option value="" disabled>Pilih Departemen</option>
                       <option
                         v-for="dept in departemenOptions"
-                        :key="dept"
-                        :value="dept"
+                        :key="dept.id"
+                        :value="dept.id"
                       >
-                        {{ dept }}
+                        {{ dept.nama }}
                       </option>
                     </select>
                     <ChevronDownIcon

@@ -1,5 +1,5 @@
 <script setup>
-import { ref, computed, reactive, provide } from "vue";
+import { ref, computed, reactive, provide, onMounted } from "vue";
 import Aside from "../bar/aside.vue";
 import HeaderAdmin from "../bar/header-admin.vue";
 import {
@@ -14,6 +14,17 @@ import {
 } from "@heroicons/vue/24/outline";
 import { PencilIcon } from "@heroicons/vue/24/solid";
 
+// API Configuration
+const API_BASE_URL = "http://localhost:3000/api";
+
+const getAuthHeaders = () => {
+  const token = localStorage.getItem("authToken");
+  return {
+    "Content-Type": "application/json",
+    Authorization: `Bearer ${token}`,
+  };
+};
+
 // --- STATE ---
 const isMobileMenuOpen = ref(false);
 const selectedRowIds = ref([]);
@@ -24,7 +35,8 @@ const itemsPerPage = 10;
 const showTambahDepartemen = ref(false);
 const showEditDepartemen = ref(false);
 const sortOrder = ref("asc");
-const loading = ref(false); // Indikator loading
+const loading = ref(false);
+const errorMessage = ref("");
 
 // State untuk Form Input (Create & Update)
 const formData = reactive({
@@ -32,58 +44,129 @@ const formData = reactive({
   nama: "",
 });
 
-// Data Utama (Mock Data untuk testing)
-const tableData = ref([
-  { id: 1, namaDepartemen: "IT" },
-  { id: 2, namaDepartemen: "Human Resources" },
-  { id: 3, namaDepartemen: "Finance" },
-  { id: 4, namaDepartemen: "Marketing" },
-  { id: 5, namaDepartemen: "Operations" },
-]);
+// Data Utama (dari API)
+const tableData = ref([]);
 
-// Counter untuk ID baru
-let idCounter = 6;
+// --- API CALLS ---
+const fetchDepartemen = async () => {
+  loading.value = true;
+  try {
+    const response = await fetch(`${API_BASE_URL}/departemen`, {
+      headers: getAuthHeaders(),
+    });
+
+    const result = await response.json();
+
+    if (result.success && result.data?.departemen) {
+      tableData.value = result.data.departemen.map((d) => ({
+        id: d.nomor,
+        namaDepartemen: d.namaDepartemen,
+        jumlahPengguna: d._count?.pengguna || 0,
+      }));
+    }
+  } catch (error) {
+    console.error("Error fetching departemen:", error);
+    errorMessage.value = "Gagal memuat data departemen";
+  } finally {
+    loading.value = false;
+  }
+};
 
 // --- LOCAL ACTIONS ---
 // 1. Tambah Departemen
-const submitTambah = () => {
+const submitTambah = async () => {
   if (!formData.nama.trim()) return alert("Nama departemen tidak boleh kosong");
 
-  tableData.value.push({
-    id: idCounter++,
-    namaDepartemen: formData.nama,
-  });
+  loading.value = true;
+  try {
+    const response = await fetch(`${API_BASE_URL}/departemen`, {
+      method: "POST",
+      headers: getAuthHeaders(),
+      body: JSON.stringify({
+        namaDepartemen: formData.nama,
+      }),
+    });
 
-  alert("Departemen berhasil ditambahkan");
-  closeTambahDepartemen();
+    const result = await response.json();
+
+    if (!response.ok) {
+      throw new Error(result.message || "Gagal menambah departemen");
+    }
+
+    alert("Departemen berhasil ditambahkan");
+    await fetchDepartemen();
+    closeTambahDepartemen();
+  } catch (error) {
+    console.error("Error creating departemen:", error);
+    alert(error.message);
+  } finally {
+    loading.value = false;
+  }
 };
 
 // 2. Update Departemen
-const submitEdit = () => {
+const submitEdit = async () => {
   if (!formData.nama.trim()) return alert("Nama departemen tidak boleh kosong");
 
-  const index = tableData.value.findIndex((item) => item.id === formData.id);
-  if (index > -1) {
-    tableData.value[index].namaDepartemen = formData.nama;
-  }
+  loading.value = true;
+  try {
+    const response = await fetch(`${API_BASE_URL}/departemen/${formData.id}`, {
+      method: "PUT",
+      headers: getAuthHeaders(),
+      body: JSON.stringify({
+        namaDepartemen: formData.nama,
+      }),
+    });
 
-  alert("Departemen berhasil diperbarui");
-  closeEditDepartemen();
+    const result = await response.json();
+
+    if (!response.ok) {
+      throw new Error(result.message || "Gagal memperbarui departemen");
+    }
+
+    alert("Departemen berhasil diperbarui");
+    await fetchDepartemen();
+    closeEditDepartemen();
+  } catch (error) {
+    console.error("Error updating departemen:", error);
+    alert(error.message);
+  } finally {
+    loading.value = false;
+  }
 };
 
 // 3. Hapus Departemen (Bulk Delete)
-const handleDeleteSelected = () => {
+const handleDeleteSelected = async () => {
   if (selectedRowIds.value.length === 0) return;
   if (!confirm(`Hapus ${selectedRowIds.value.length} departemen terpilih?`))
     return;
 
-  tableData.value = tableData.value.filter(
-    (item) => !selectedRowIds.value.includes(item.id),
-  );
+  loading.value = true;
+  try {
+    for (const id of selectedRowIds.value) {
+      const response = await fetch(`${API_BASE_URL}/departemen/${id}`, {
+        method: "DELETE",
+        headers: getAuthHeaders(),
+      });
 
-  alert("Data terpilih berhasil dihapus");
-  selectedRowIds.value = [];
-  selectAllChecked.value = false;
+      const result = await response.json();
+      if (!response.ok) {
+        throw new Error(
+          result.message || `Gagal menghapus departemen ID ${id}`,
+        );
+      }
+    }
+
+    alert("Data terpilih berhasil dihapus");
+    await fetchDepartemen();
+    selectedRowIds.value = [];
+    selectAllChecked.value = false;
+  } catch (error) {
+    console.error("Error deleting departemen:", error);
+    alert(error.message);
+  } finally {
+    loading.value = false;
+  }
 };
 
 // --- MODAL CONTROLLERS ---
@@ -107,6 +190,11 @@ const openEditDepartemen = (row) => {
 const closeEditDepartemen = () => {
   showEditDepartemen.value = false;
 };
+
+// Lifecycle: Fetch data on mount
+onMounted(async () => {
+  await fetchDepartemen();
+});
 
 // --- TABLE LOGIC (Existing Logic Preserved) ---
 
@@ -202,6 +290,7 @@ const toggleMobileMenu = () => {
   isMobileMenuOpen.value = !isMobileMenuOpen.value;
 };
 
+provide("isMobileMenuOpen", isMobileMenuOpen);
 provide("toggleMobileMenu", toggleMobileMenu);
 </script>
 
@@ -209,7 +298,7 @@ provide("toggleMobileMenu", toggleMobileMenu);
   <div class="h-screen flex flex-col font-['Montserrat']">
     <div class="flex flex-1 overflow-hidden">
       <!-- Aside Sidebar - Push content style -->
-      <Aside :isOpen="isSidebarOpen" :onClose="closeSidebar" />
+      <Aside />
 
       <!-- Main Content Area -->
       <div class="flex flex-col flex-1 min-w-0 overflow-hidden">
@@ -268,7 +357,7 @@ provide("toggleMobileMenu", toggleMobileMenu);
               class="flex-1 flex flex-col gap-4 bg-gray-50 p-1 rounded-lg border border-gray-200 overflow-hidden"
             >
               <div
-                class="overflow-x-auto overflow-y-auto rounded-lg border bg-white max-h-105"
+                class="overflow-x-auto overflow-y-auto rounded-lg border bg-white"
               >
                 <div v-if="loading" class="p-4 text-center text-gray-500">
                   Memuat data...
@@ -306,9 +395,17 @@ provide("toggleMobileMenu", toggleMobileMenu);
                       <th
                         class="px-4 py-3 text-left text-sm font-semibold text-gray-700 whitespace-nowrap w-48 cursor-pointer hover:bg-gray-100 transition"
                         @click="sortByDepartmentName"
+                        :title="
+                          sortOrder === 'asc'
+                            ? 'Klik untuk urut Z-A'
+                            : 'Klik untuk urut A-Z'
+                        "
                       >
                         <div class="flex items-center gap-2">
                           <span>Nama Departemen</span>
+                          <span class="text-xs text-gray-500"
+                            >({{ sortOrder === "asc" ? "A-Z" : "Z-A" }})</span
+                          >
                           <ArrowDownIcon
                             v-if="sortOrder === 'asc'"
                             class="w-4 h-4"

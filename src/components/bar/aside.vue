@@ -1,5 +1,5 @@
 <script setup>
-import { ref, onMounted, watch } from "vue";
+import { ref, onMounted, watch, inject, computed } from "vue";
 import { useRouter, useRoute } from "vue-router";
 import {
   XMarkIcon,
@@ -18,7 +18,24 @@ import {
 
 const router = useRouter();
 const route = useRoute();
-const isMobileMenuOpen = ref(false);
+
+// Inject isMobileMenuOpen from parent (provided by page components)
+const injectedMobileMenuOpen = inject("isMobileMenuOpen", null);
+const injectedToggleMobileMenu = inject("toggleMobileMenu", null);
+
+// Use injected value if available, otherwise use local ref
+const localMobileMenuOpen = ref(false);
+const isMobileMenuOpen = computed({
+  get: () => injectedMobileMenuOpen?.value ?? localMobileMenuOpen.value,
+  set: (val) => {
+    if (injectedMobileMenuOpen) {
+      injectedMobileMenuOpen.value = val;
+    } else {
+      localMobileMenuOpen.value = val;
+    }
+  },
+});
+
 const activeMenu = ref("data-monitor");
 const expandedMenu = ref(new Set());
 const windowWidth = ref(
